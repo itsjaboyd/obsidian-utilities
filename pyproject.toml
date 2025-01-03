@@ -1,16 +1,17 @@
 [tool.poetry]
 name = "obsidian-utilities"
 version = "0.0.1"
-description = "Fundamental note utilities that coincide with the Obsidian application."
+description = "Fundamental utilities that can be applied to multiple notes that live with the Obsidian application."
 authors = ["Jason Boyd <jasonboyd99@gmail.com>"]
 maintainers = ["Jason Boyd <jasonboyd99@gmail.com>"]
-repository = ""
+repository = "https://github.com/itsjaboyd/obsidian-utilities"
 keywords = ["obsidian", "notes"]
 readme = "README.md"
 license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.13"
+click = "^8.1.8"
 
 
 [tool.poetry.group.test.dependencies]
