@@ -1,0 +1,4 @@
+site_name: Obsidian Utilities
+theme: material
+nav:
+  - Project Layout: layout.md
