@@ -1,0 +1,3 @@
+
+class TestCopyTemplate:
+    pass

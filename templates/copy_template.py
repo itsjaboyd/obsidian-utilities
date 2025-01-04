@@ -15,6 +15,63 @@ import pathlib
 import datetime
 import shutil
 
+
+def compute_spread(string_list):
+    """Compute the spread (range of lengths of elements) in string_list.
+
+    Args:
+        string_list (iterable): the iterable to compare lengths against.
+
+    Returns:
+        int: the spread of the supplied string_list.
+    """
+
+    element_lengths = [len(s) for s in string_list]
+    return max(element_lengths) - min(element_lengths)
+
+
+def find_common_position_characters(string_list):
+    """Find all common characters that share the same position in string_list.
+
+    Args:
+        string_list (iterable): the iterable to find the common characters from.
+
+    Returns:
+        list: the unique list of characters that all share the same position.
+    """
+
+    commonality = set()
+    for comparer, *elements in zip(*string_list):
+        if all(comparer == matcher for matcher in elements):
+            commonality.add(comparer)
+    return list(commonality)
+
+
+def iso_proper_length_parts(iso_part_list):
+    """Given an ISO-spearated parts list, determine if the lengths of its parts are 
+        ISO-formatted worthy.
+
+    Args:
+        iso_part_list (list): the parts of an ISO string that the function checks 
+            lengths against to determine ISO-formatted worthiness.
+
+    Returns:
+        bool: wether the parts list matches the ISO-formatted lengths required.
+    """
+
+    if len(iso_part_list) != 3:
+        return False
+    if len(iso_part_list[0]) != 4:
+        return False
+    if len(iso_part_list[1]) == 3:
+        if len(iso_part_list[2]) != 1:
+            return False
+    if len(iso_part_list[1]) == 2:
+        if len(iso_part_list[2]) != 2:
+            return False
+    return True
+
+
 def process_template_location(template_object):
     """Given a template object (should be str), perform checks to ensure the supplied 
         path exists and is an actual file and not a directory to be copied from.
@@ -83,37 +140,6 @@ def process_directory_location(target_directory):
     return path_instance
 
 
-def find_common_position_characters(string_list):
-    """Find all common characters that share the same position in string_list.
-
-    Args:
-        string_list (iterable): the iterable to find the common characters from.
-
-    Returns:
-        list: the unique list of characters that all share the same position.
-    """
-
-    commonality = set()
-    for comparer, *elements in zip(*string_list):
-        if all(comparer == matcher for matcher in elements):
-            commonality.add(comparer)
-    return list(commonality)
-
-
-def compute_spread(string_list):
-    """Compute the spread (range of lengths of elements) in string_list.
-
-    Args:
-        string_list (iterable): the iterable to compare lengths against.
-
-    Returns:
-        int: the spread of the supplied string_list.
-    """
-
-    element_lengths = [len(s) for s in string_list]
-    return max(element_lengths) - min(element_lengths)
-
-
 def iso_formatted_string(iso_string, common_characters):
     """Given a string, check if its ISO-formatted based on a list of common characters.
 
@@ -164,109 +190,6 @@ def iso_formatted_list(string_list, common_characters):
     if all(results[0]) and len(set(results[1])) <= 1:
         return (True, results[1][-1])
     return (False, None)
-
-
-
-def iso_proper_length_parts(iso_part_list):
-    """Given an ISO-spearated parts list, determine if the lengths of its parts are 
-        ISO-formatted worthy.
-
-    Args:
-        iso_part_list (list): the parts of an ISO string that the function checks 
-            lengths against to determine ISO-formatted worthiness.
-
-    Returns:
-        bool: wether the parts list matches the ISO-formatted lengths required.
-    """
-
-    if len(iso_part_list) != 3:
-        return False
-    if len(iso_part_list[0]) != 4:
-        return False
-    if len(iso_part_list[1]) == 3:
-        if len(iso_part_list[2]) != 1:
-            return False
-    if len(iso_part_list[1]) == 2:
-        if len(iso_part_list[2]) != 2:
-            return False
-    return True
-
-
-def analyze_directory(directory):
-    """Given a directory, analyze the files within and determine if they match some 
-        sort of formatting pattern.
-
-    Args:
-        directory (str): the directory to analyze against.
-
-    Returns:
-        dict: the information object that contains elements that include if formatting 
-            was detected, the formatting type that was detected, and the separator 
-            between formatted elements.
-    """
-
-    return_object = {
-        "detected_formatting": False,
-        "formatting_type": None,
-        "formatting_separator": None,
-    }
-    
-    path_directory = process_directory_location(directory)
-    files = path_directory.iterdir()
-    stem_names = [f.stem for f in files]
-
-    # no files were found in the directory, don't process for patterns
-    if not files:
-        return return_object
-
-    # file names have different lengths, don't process for patterns
-    if compute_spread(stem_names) > 0:
-        return return_object
-    
-    # there are no commonly positioned characters, don't process for patterns
-    common_characters = find_common_position_characters(stem_names)
-    if not common_characters:
-        return return_object
-
-    # could be an ISO formatted date naming convention in directory
-    iso_formatted_files, split_common_char = iso_formatted_list(stem_names)
-    if iso_formatted_files:
-        return_object = {
-            "detected_formatting": True,
-            "formatting_type": "ISO",
-            "formatting_separator": split_common_char,
-        }
-
-    return return_object
-
-
-def copy_template(template_object, target_directory, use_formatting=True, number_copies=1):
-    """The top-level copy function that should be used by the caller.
-
-    Args:
-        template_object (str): the template file path that will be used to copy from
-        target_directory (str): the target directory the copy will be copied into
-        use_formatting (bool, optional): optionally follow formatting present in 
-            target_directory, and defaults to True.
-        number_copies (int, optional): the number of copies to make of the template_object 
-            into target_directory, and defaults to 1.
-
-    Raises:
-        ValueError: if the number of copies is some un-copiable (less than zero) number.
-
-    Returns:
-        bool: wether the copy succeeded or not based on further function calls.
-    """
-
-    if number_copies < 0: # cannot copy less than zero times
-        raise ValueError(f"Cannot copy notes {number_copies} of times")
-
-    template_path = process_template_location(template_object)
-    target_path = process_directory_location(target_directory)
-
-    if number_copies == 1:
-        return copy_template_single(template_path, target_path, use_formatting=use_formatting)
-    return copy_template_multiple(template_path, target_path, number_copies=number_copies)
     
 
 def copy_template_handler(template_path, target_file):
@@ -347,3 +270,80 @@ def copy_template_multiple(template_path, target_path, number_copies=1):
         target_file = target_path.joinpath(target_name)
         results.append(copy_template_handler(template_path, target_file))
     return results
+
+
+def copy_template(template_object, target_directory, use_formatting=True, number_copies=1):
+    """The top-level copy function that should be used by the caller.
+
+    Args:
+        template_object (str): the template file path that will be used to copy from
+        target_directory (str): the target directory the copy will be copied into
+        use_formatting (bool, optional): optionally follow formatting present in 
+            target_directory, and defaults to True.
+        number_copies (int, optional): the number of copies to make of the template_object 
+            into target_directory, and defaults to 1.
+
+    Raises:
+        ValueError: if the number of copies is some un-copiable (less than zero) number.
+
+    Returns:
+        bool: wether the copy succeeded or not based on further function calls.
+    """
+
+    if number_copies < 0: # cannot copy less than zero times
+        raise ValueError(f"Cannot copy notes {number_copies} of times")
+
+    template_path = process_template_location(template_object)
+    target_path = process_directory_location(target_directory)
+
+    if number_copies == 1:
+        return copy_template_single(template_path, target_path, use_formatting=use_formatting)
+    return copy_template_multiple(template_path, target_path, number_copies=number_copies)
+
+
+def analyze_directory(directory):
+    """Given a directory, analyze the files within and determine if they match some 
+        sort of formatting pattern.
+
+    Args:
+        directory (str): the directory to analyze against.
+
+    Returns:
+        dict: the information object that contains elements that include if formatting 
+            was detected, the formatting type that was detected, and the separator 
+            between formatted elements.
+    """
+
+    return_object = {
+        "detected_formatting": False,
+        "formatting_type": None,
+        "formatting_separator": None,
+    }
+    
+    path_directory = process_directory_location(directory)
+    files = path_directory.iterdir()
+    stem_names = [f.stem for f in files]
+
+    # no files were found in the directory, don't process for patterns
+    if not files:
+        return return_object
+
+    # file names have different lengths, don't process for patterns
+    if compute_spread(stem_names) > 0:
+        return return_object
+    
+    # there are no commonly positioned characters, don't process for patterns
+    common_characters = find_common_position_characters(stem_names)
+    if not common_characters:
+        return return_object
+
+    # could be an ISO formatted date naming convention in directory
+    iso_formatted_files, split_common_char = iso_formatted_list(stem_names)
+    if iso_formatted_files:
+        return_object = {
+            "detected_formatting": True,
+            "formatting_type": "ISO",
+            "formatting_separator": split_common_char,
+        }
+
+    return return_object
