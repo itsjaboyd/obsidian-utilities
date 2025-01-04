@@ -8,7 +8,7 @@
 
     Author: Jason Boyd
     Date: January 3, 2025
-    Modified: January 3, 2025
+    Modified: January 4, 2025
 """
 
 import pathlib
@@ -240,29 +240,110 @@ def analyze_directory(directory):
     return return_object
 
 
-def copy_template(template_object, target_directory, number_copies=1):
+def copy_template(template_object, target_directory, use_formatting=True, number_copies=1):
+    """The top-level copy function that should be used by the caller.
 
-    # THINGS TO CONSIDER
-    # * do we just copy over files with a template-copy-1, 2, etc and finish?
-    # * do we attempt to create appropriate file names?
-    #   - do we try to analyze current notes in target_directory and try to follow conventions?
+    Args:
+        template_object (str): the template file path that will be used to copy from
+        target_directory (str): the target directory the copy will be copied into
+        use_formatting (bool, optional): optionally follow formatting present in 
+            target_directory, and defaults to True.
+        number_copies (int, optional): the number of copies to make of the template_object 
+            into target_directory, and defaults to 1.
+
+    Raises:
+        ValueError: if the number of copies is some un-copiable (less than zero) number.
+
+    Returns:
+        bool: wether the copy succeeded or not based on further function calls.
+    """
+
+    if number_copies < 0: # cannot copy less than zero times
+        raise ValueError(f"Cannot copy notes {number_copies} of times")
 
     template_path = process_template_location(template_object)
     target_path = process_directory_location(target_directory)
-    single_filename = None
-    analyze_results = analyze_directory(target_directory)
 
-    if number_copies == 1 and analyze_results["detected_formatting"]:
-        match analyze_results["formatting_type"]:
-            case "ISO":
-                todays_date = datetime.date.today().isoformat()
-                todays_file = todays_date.replace("-", analyze_results["formatting_separator"])
-                single_filename = todays_file + template_path.suffix
-            case _:
-                pass
-            
+    if number_copies == 1:
+        return copy_template_single(template_path, target_path, use_formatting=use_formatting)
+    return copy_template_multiple(template_path, target_path, number_copies=number_copies)
+    
+
+def copy_template_handler(template_path, target_file):
+    """Handler function that actually does the copying of template_path using shutil.
+
+    Args:
+        template_path (pathlib.Path): the template path-like object to copy from.
+        target_file (pathlib.Path): the target path-like object to copy to.
+
+    Raises:
+        FileExistsError: if the target_file already exists in the filesystem
+        IsADirectoryError: if the target_file is a directory
+
+    Returns:
+        bool: wether the copy of template_path to target_file succeeded or not.
+    """
+    
+    if target_file.is_file():
+        raise FileExistsError(f"Target file already exists: {target_file}")
+    elif target_file.is_dir():
+        raise IsADirectoryError(f"Target file is a directory: {target_file}")
+    
+    try: # attempt to perform the actual copy of the template into target
+        shutil.copy(template_path, target_file)
+        return True
+    except:
+        return False
 
 
+def copy_template_single(template_path, target_path, use_formatting=True):
+    """Copy a single template file to the target path, optionally using existing formatting.
+
+    Args:
+        template_path (pathlib.Path): the template file path to copy from
+        target_path (pathlib.Path): the target directory path to copy into
+        use_formatting (bool, optional): optionally use potentially existing formatting 
+        in the target directory, defaults to True.
+
+    Returns:
+        bool: wether the copy succeeded or not based on further function calls.
+    """
+
+    analyze_results = analyze_directory(target_path)
+    # if caller doesn't want to use formatting or couldn't find formatting
+    if not use_formatting or not analyze_results["detected_formatting"]:
+        target_name = template_path.stem + "-copy" + template_path.suffix
+        target_file = target_path.joinpath(template_path.stem)
+        return copy_template_handler(template_path, target_file)
+
+    single_file = None
+    match analyze_results["formatting_type"]:
+        case "ISO":
+            todays_date = datetime.date.today().isoformat()
+            todays_file = todays_date.replace("-", analyze_results["formatting_separator"])
+            single_file = todays_file + template_path.suffix
+        case _:
+            pass
+    
+    return copy_template_handler(template_path, single_file)
+        
+
+def copy_template_multiple(template_path, target_path, number_copies=1):
+    """Copy template file to the target path number_copies times.
+
+    Args:
+        template_path (pathlib.Path): the template file path to copy from
+        target_path (pathlib.Path): the target directory path to copy into
+        number_copies (int): the number of copies to make of template_path 
+            into target_path.
+
+    Returns:
+        list: wether the copies succeeded or not based on further function calls.
+    """
+
+    results = []
     for index in range(0, number_copies):
-        pass
-   
+        target_name = template_path.stem + f"-copy-{index}" + template_path.suffix
+        target_file = target_path.joinpath(target_name)
+        results.append(copy_template_handler(template_path, target_file))
+    return results
