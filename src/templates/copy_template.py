@@ -37,14 +37,14 @@ def find_common_position_characters(string_list):
         string_list (iterable): the iterable to find the common characters from.
 
     Returns:
-        list: the unique list of characters that all share the same position.
+        list: the unique list of sorted characters that all share the same position.
     """
 
     commonality = set()
     for comparer, *elements in zip(*string_list):
         if all(comparer == matcher for matcher in elements):
             commonality.add(comparer)
-    return list(commonality)
+    return sorted(list(commonality))
 
 
 def iso_proper_length_parts(iso_part_list):

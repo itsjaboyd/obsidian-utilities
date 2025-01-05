@@ -9,6 +9,7 @@ keywords = ["obsidian", "notes"]
 readme = "README.md"
 license = "MIT"
 
+
 [tool.poetry.dependencies]
 python = "^3.10.12"
 click = "^8.1.8"
@@ -31,3 +32,12 @@ mkdocs-material = "^9.5.49"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+pythonpath = [
+  ".", "src",
+]
