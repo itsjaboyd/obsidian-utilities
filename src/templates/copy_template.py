@@ -26,6 +26,9 @@ def compute_spread(string_list):
         int: the spread of the supplied string_list.
     """
 
+    if len(string_list) == 0:
+        return 0
+
     element_lengths = [len(s) for s in string_list]
     return max(element_lengths) - min(element_lengths)
 
@@ -227,7 +230,8 @@ def copy_template_single(template_path, target_path, use_formatting=True):
         template_path (pathlib.Path): the template file path to copy from
         target_path (pathlib.Path): the target directory path to copy into
         use_formatting (bool, optional): optionally use potentially existing formatting 
-        in the target directory, defaults to True.
+        in the target directory. If ISO formatting is found, the copied file will 
+        utilize today's date as its file name. Defaults to True.
 
     Returns:
         bool: wether the copy succeeded or not based on further function calls.
@@ -237,15 +241,16 @@ def copy_template_single(template_path, target_path, use_formatting=True):
     # if caller doesn't want to use formatting or couldn't find formatting
     if not use_formatting or not analyze_results["detected_formatting"]:
         target_name = template_path.stem + "-copy" + template_path.suffix
-        target_file = target_path.joinpath(template_path.stem)
+        target_file = target_path.joinpath(target_name)
         return copy_template_handler(template_path, target_file)
 
     single_file = None
     match analyze_results["formatting_type"]:
         case "ISO":
-            todays_date = datetime.date.today().isoformat()
-            todays_file = todays_date.replace("-", analyze_results["formatting_separator"])
-            single_file = todays_file + template_path.suffix
+            todays_date_iso = datetime.date.today().isoformat()
+            todays_file_name = todays_date_iso.replace("-", analyze_results["formatting_separator"])
+            todays_file_full = todays_file_name + template_path.suffix
+            single_file = target_path.joinpath(todays_file_full)
         case _:
             pass
     
@@ -339,7 +344,7 @@ def analyze_directory(directory):
         return return_object
 
     # could be an ISO formatted date naming convention in directory
-    iso_formatted_files, split_common_char = iso_formatted_list(stem_names)
+    iso_formatted_files, split_common_char = iso_formatted_list(stem_names, common_characters)
     if iso_formatted_files:
         return_object = {
             "detected_formatting": True,
