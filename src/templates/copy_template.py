@@ -248,7 +248,9 @@ def copy_template_single(template_path, target_path, use_formatting=True):
     match analyze_results["formatting_type"]:
         case "ISO":
             todays_date_iso = datetime.date.today().isoformat()
-            todays_file_name = todays_date_iso.replace("-", analyze_results["formatting_separator"])
+            todays_file_name = template_path.stem + "-copy" + template_path.suffix
+            found_separator = analyze_results["formatting_separator"]
+            todays_file_name = todays_date_iso.replace("-", found_separator if found_separator else "")
             todays_file_full = todays_file_name + template_path.suffix
             single_file = target_path.joinpath(todays_file_full)
         case _:
@@ -330,18 +332,15 @@ def analyze_directory(directory):
     files = path_directory.iterdir()
     stem_names = [f.stem for f in files]
 
-    # no files were found in the directory, don't process for patterns
-    if not files:
+    # no file names were found in the directory, don't process for patterns
+    if not stem_names:
         return return_object
 
     # file names have different lengths, don't process for patterns
     if compute_spread(stem_names) > 0:
         return return_object
     
-    # there are no commonly positioned characters, don't process for patterns
     common_characters = find_common_position_characters(stem_names)
-    if not common_characters:
-        return return_object
 
     # could be an ISO formatted date naming convention in directory
     iso_formatted_files, split_common_char = iso_formatted_list(stem_names, common_characters)

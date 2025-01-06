@@ -122,74 +122,74 @@ class TestCopyTemplate:
 
 
     def test_copy_template_single(self, tmp_path):
-        template_dir = tmp_path / "template_dir"
-        template_dir.mkdir()
-        template_file = template_dir / "template_file.txt"
-        template_file.touch()
-        target_dir = tmp_path / "target_dir"
-        target_dir.mkdir()
-
-        assert ct.copy_template_single(template_file, target_dir) == True
-        copied_file = target_dir / "template_file-copy.txt"
-        assert copied_file.exists()
-        copied_file.unlink()
-        assert not copied_file.exists()
-
-        iso_files = [
-            target_dir / "2025-01-01.txt",
-            target_dir / "2025-01-02.txt",
+        temp_paths = [
+            tmp_path / "temp_path_one",
+            tmp_path / "temp_path_two",
+            tmp_path / "temp_path_three"
         ]
-        for iso_file in iso_files:
-            iso_file.touch()
-        assert ct.copy_template_single(template_file, target_dir) == True
-        iso_today = datetime.date.today().isoformat() + ".txt"
-        copied_file = target_dir / iso_today
-        assert (copied_file).exists()
-        copied_file.unlink()
-        assert not copied_file.exists()
-        
-        for iso_file in iso_files:
-            iso_file.unlink()
-        
-        iso_files = [
-            target_dir / "2025-01-01.txt",
-            target_dir / "2025_01_02.txt",
-        ]
-        for iso_file in iso_files:
-            iso_file.touch()
-        assert ct.copy_template_single(template_file, target_dir) == True
-        copied_file = target_dir / "template_file-copy.txt"
-        assert copied_file.exists()
-        copied_file.unlink()
-        assert not copied_file.exists()
+        for temp_path in temp_paths:
+            temp_path.mkdir()
 
-        for iso_file in iso_files:
-            iso_file.unlink()
-        
-        iso_files = [
-            target_dir / "20250101.txt",
-            target_dir / "20250102.txt",
-        ]
-        for iso_file in iso_files:
-            iso_file.touch()
-        assert ct.copy_template_single(template_file, target_dir) == True
-        flat_iso_today = datetime.date.today().isoformat().replace("-", "") + ".txt"
-        copied_file = target_dir / flat_iso_today
-        assert copied_file.exists()
-        copied_file.unlink()
-        assert not copied_file.exists()
+        iso_files_one = ["2025-01-01.txt", "2025-01-02.txt"]
+        expected_file_one = datetime.date.today().isoformat() + ".txt"
+        self.helper_copy_template_single(iso_files_one, expected_file_one, temp_paths[0])
+
+        iso_files_two = ["2025-01-01.txt", "2025_01_02.txt"]
+        expected_file_two = "template_file-copy.txt"
+        self.helper_copy_template_single(iso_files_two, expected_file_two, temp_paths[1])
+
+        iso_files_three = ["20250101.txt", "20250102.txt"]
+        expected_file_three = datetime.date.today().isoformat().replace("-", "") + ".txt"
+        self.helper_copy_template_single(iso_files_three, expected_file_three, temp_paths[2])
     
 
-    def test_copy_template_multiple(self):
-        pass
+    def test_copy_template_multiple(self, tmp_path):
+        tfo, tdo = self.helper_create_template_structure(tmp_path / "one")
+        results_one = ct.copy_template_multiple(tfo, tdo, number_copies=5)
+        assert len(results_one) == 5
+        assert all(results_one)
+
+        tft, tdt = self.helper_create_template_structure(tmp_path / "two")
+        results_two = ct.copy_template_multiple(tft, tdt, number_copies=20)
+        assert len(results_two) == 20
+        assert all(results_two)
+
+        tfth, tdth = self.helper_create_template_structure(tmp_path / "three")
+        results_three = ct.copy_template_multiple(tfth, tdth, number_copies=0)
+        assert len(results_three) == 0
 
 
-    def test_copy_template(self):
-        pass
+    def test_copy_template(self, tmp_path):
+        tfo, tdo = self.helper_create_template_structure(tmp_path)
+        with pytest.raises(ValueError):
+            ct.copy_template(tfo, tdo, number_copies=-1)
+        assert ct.copy_template(tfo, tdo, number_copies=1) == True
+        results = ct.copy_template(tfo, tdo, number_copies=100)
+        assert len(results) == 100
+        assert all(results)
 
 
     def test_analyze_directory(self):
         pass
 
 
+    def helper_copy_template_single(self, iso_names, expected_file, temp_path):
+        template_file, target_dir = self.helper_create_template_structure(temp_path)
 
+        iso_files = [target_dir / iso_name for iso_name in iso_names]
+        for iso_file in iso_files:
+            iso_file.touch()
+        assert ct.copy_template_single(template_file, target_dir) == True
+        copied_file = target_dir / expected_file
+        assert copied_file.exists()
+
+
+    @staticmethod
+    def helper_create_template_structure(temp_path):
+        template_dir = temp_path / "template_dir"
+        template_dir.mkdir(parents=True)
+        template_file = template_dir / "template_file.txt"
+        template_file.touch()
+        target_dir = temp_path / "target_dir"
+        target_dir.mkdir(parents=True)
+        return template_file, target_dir
