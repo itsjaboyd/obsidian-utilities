@@ -152,11 +152,12 @@ def iso_formatted_string(iso_string, common_characters):
             the second string denoting the character that separates the ISO elements.
     """
 
-    if len(iso_string) not in [8, 10]:
+    
+    use_iso_string = str(iso_string)
+    iso_separated_char = None
+    if len(use_iso_string) not in [8, 10]:
         return (False, None)
     
-    use_iso_string = iso_string
-    iso_separated_char = None
     if len(iso_string) == 10:
         for common_char in common_characters:
             split_iso = iso_string.split(common_char)
@@ -185,8 +186,8 @@ def iso_formatted_list(string_list, common_characters):
             and the second string denoting the character that separates the ISO elements.
     """
 
-    iso_formatted_results = [iso_formatted_string(ifi) for ifi in string_list]
-    results = zip(*iso_formatted_results)
+    iso_formatted_results = [iso_formatted_string(ifi, common_characters) for ifi in string_list]
+    results = list(zip(*iso_formatted_results))
     if all(results[0]) and len(set(results[1])) <= 1:
         return (True, results[1][-1])
     return (False, None)
