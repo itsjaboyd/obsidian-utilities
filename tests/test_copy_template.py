@@ -169,8 +169,50 @@ class TestCopyTemplate:
         assert all(results)
 
 
-    def test_analyze_directory(self):
-        pass
+    def test_analyze_directory(self, tmp_path):
+        usual_result = {
+            "detected_formatting": False,
+            "formatting_type": None,
+            "formatting_separator": None,
+        }
+        temp_paths = [
+            tmp_path / "temp_path_one",
+            tmp_path / "temp_path_two",
+            tmp_path / "temp_path_three"
+        ]
+        for temp_path in temp_paths:
+            temp_path.mkdir()
+
+        first_result = ct.analyze_directory(tmp_path)
+        assert first_result == usual_result
+
+        template_file_one, target_dir_one = self.helper_create_template_structure(temp_paths[0])
+        ct.copy_template(template_file_one, target_dir_one, number_copies=10)
+        second_result = ct.analyze_directory(target_dir_one)
+        assert second_result == usual_result
+
+        first_iso_files = [
+            temp_paths[1] / "2025-01-01.txt",
+            temp_paths[1] / "2025-01-02.txt",
+        ]
+        for iso_file in first_iso_files:
+            iso_file.touch()
+
+        third_result = ct.analyze_directory(temp_paths[1])
+        assert third_result["detected_formatting"]
+        assert third_result["formatting_type"] == "ISO"
+        assert third_result["formatting_separator"] == "-"
+
+        second_iso_files = [
+            temp_paths[2] / "20250101.txt",
+            temp_paths[2] / "20250102.txt",
+        ]
+        for iso_file in second_iso_files:
+            iso_file.touch()
+        fourth_result = ct.analyze_directory(temp_paths[2])
+        assert fourth_result["detected_formatting"]
+        assert fourth_result["formatting_type"] == "ISO"
+        assert fourth_result["formatting_separator"] == None
 
 
     def helper_copy_template_single(self, iso_names, expected_file, temp_path):
