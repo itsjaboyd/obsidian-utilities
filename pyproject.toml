@@ -1,5 +1,6 @@
 [tool.poetry]
 name = "obsidian-utilities"
+config = "obsidian_utilities.ini"
 version = "0.0.1"
 description = "Fundamental utilities that can be applied to multiple notes that live with the Obsidian application."
 authors = ["Jason Boyd <jasonboyd99@gmail.com>"]
