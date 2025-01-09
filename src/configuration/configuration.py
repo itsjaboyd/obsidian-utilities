@@ -7,7 +7,7 @@ with open("pyproject.toml", "rb") as f:
 
 NAMES = (
     PROJECT_CONFIGURATION["tool"]["poetry"]["name"],
-    PROJECT_CONFIGURATION["tool"]["poetry"]["config"],
+    PROJECT_CONFIGURATION["application"]["config"]["config"],
 )
 
 CONFIGURATION_PATHS = (
@@ -57,4 +57,10 @@ def get_configuration():
     configuration = configparser.ConfigParser()
     configuration.read(found_configuration)
     return configuration
+
+def update_configuration(section, key, value):
+    config = get_configuration()
+    config.set(section, key, value)
+    with open(get_configuration_path(), "w") as f:
+        config.write(f)
     
