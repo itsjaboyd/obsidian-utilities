@@ -1,4 +1,4 @@
-from src.templates import copy_template as ct
+from templates import copy_template as ct
 import pytest
 import datetime
 
