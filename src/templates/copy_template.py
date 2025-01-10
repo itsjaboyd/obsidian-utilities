@@ -8,8 +8,11 @@
 
     Author: Jason Boyd
     Date: January 3, 2025
-    Modified: January 4, 2025
+    Modified: January 9, 2025
 """
+
+# TODO:
+# - [ ] add checks to copy ensuring target directory can handle expected filenames.
 
 import pathlib
 import datetime
@@ -242,7 +245,7 @@ def copy_template_single(template_path, target_path, use_formatting=True):
     if not use_formatting or not analyze_results["detected_formatting"]:
         target_name = template_path.stem + "-copy" + template_path.suffix
         target_file = target_path.joinpath(target_name)
-        return copy_template_handler(template_path, target_file)
+        return [copy_template_handler(template_path, target_file)]
 
     single_file = None
     match analyze_results["formatting_type"]:
@@ -255,8 +258,7 @@ def copy_template_single(template_path, target_path, use_formatting=True):
             single_file = target_path.joinpath(todays_file_full)
         case _:
             pass
-    
-    return copy_template_handler(template_path, single_file)
+    return [copy_template_handler(template_path, single_file)]
         
 
 def copy_template_multiple(template_path, target_path, number_copies=1):

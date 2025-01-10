@@ -1,6 +1,6 @@
 import click
-from templates import copy_template as ct
 import pathlib
+from templates import copy_template as ct
 from configuration import configuration as cfg
 
 @click.command()
@@ -9,20 +9,45 @@ from configuration import configuration as cfg
 @click.option("--uf", "--use-formatting", is_flag=True, default=False, help="Use formatting found in the destination.")
 @click.option("--n", "--number-copies", type=int, default=1, help="Number of template copies to make.")
 def copy_template(filename, destination, uf, n):
+    """Command to copy a template filename to a destination n times with option use 
+        formatting uf. The function checks template configuration to get a usable 
+        target directory from destination and attempts the copy operation.
+
+    Args:
+        filename (pathlib.Path): the template filename to copy from.
+        destination (pathlib.Path): the target directory to put copies in.
+        uf (bool): analyze destination for formatting to use in the copy.
+        n (int): the number of copies to make of the template file.
+    """
+
     results, usable_filename = False, check_template_configuration(filename)
-    click.echo(f"Copying template file {filename.name} {n} time(s) to {destination.name}/.")
-    try:
+    try: # attempt to copy the template file to the destination using templates module
+        click.echo(f"Copying template file '{filename.name}' {n} time(s) to {destination.name}/.")
         results = ct.copy_template(usable_filename, destination, use_formatting=uf, number_copies=n)
     except FileExistsError as fee:
         click.echo(f"Cannot copy template file to destination: {fee}")
     except FileNotFoundError as fnfe:
-        click.echo(f"Cannot find template file: {fnfe}")
-    click.echo(f"Results from copying template file: {results}")
+        click.echo(f"Cannot find template file location: {fnfe}")
+    results_message = (f"Template file '{filename.name}' copied {"" if all(results) else "un"}"
+        f"successfully {n} time(s) to {usable_filename}.")
+    click.echo(results_message)
     
 
 def check_template_configuration(template_file):
-    config = cfg.get_configuration()
-    configured_template_path = config.get("TEMPLATE", "directory", fallback=None)
+    """Given a template file path, save or update template path configuration if 
+        necessary and return a usable template location path based on what the 
+        caller supplied; if just a filename, use configuration otherwise use 
+        what the caller supplied as a template path.
+
+    Args:
+        template_file (pathlib.Path): the template file location to analyze 
+            and possibly update configuration for.
+
+    Returns:
+        pathlib.Path: the usable path to copy the template file from.
+    """
+    
+    configured_template_path = cfg.get_configuration().get("TEMPLATE", "directory", fallback=None)
     just_filename_supplied = str(template_file) == template_file.name
     handled_template_configuration = False
     # if just a filename was supplied, then use configured template path / filename

@@ -146,16 +146,19 @@ class TestCopyTemplate:
     def test_copy_template_multiple(self, tmp_path):
         tfo, tdo = self.helper_create_template_structure(tmp_path / "one")
         results_one = ct.copy_template_multiple(tfo, tdo, number_copies=5)
+        assert isinstance(results_one, list)
         assert len(results_one) == 5
         assert all(results_one)
 
         tft, tdt = self.helper_create_template_structure(tmp_path / "two")
         results_two = ct.copy_template_multiple(tft, tdt, number_copies=20)
+        assert isinstance(results_two, list)
         assert len(results_two) == 20
         assert all(results_two)
 
         tfth, tdth = self.helper_create_template_structure(tmp_path / "three")
         results_three = ct.copy_template_multiple(tfth, tdth, number_copies=0)
+        assert isinstance(results_three, list)
         assert len(results_three) == 0
 
 
@@ -163,7 +166,7 @@ class TestCopyTemplate:
         tfo, tdo = self.helper_create_template_structure(tmp_path)
         with pytest.raises(ValueError):
             ct.copy_template(tfo, tdo, number_copies=-1)
-        assert ct.copy_template(tfo, tdo, number_copies=1) == True
+        assert ct.copy_template(tfo, tdo, number_copies=1) == [True]
         results = ct.copy_template(tfo, tdo, number_copies=100)
         assert len(results) == 100
         assert all(results)
@@ -221,7 +224,11 @@ class TestCopyTemplate:
         iso_files = [target_dir / iso_name for iso_name in iso_names]
         for iso_file in iso_files:
             iso_file.touch()
-        assert ct.copy_template_single(template_file, target_dir) == True
+        
+        result = ct.copy_template_single(template_file, target_dir)
+        print(result)
+        assert isinstance(result, list)
+        assert all(result)
         copied_file = target_dir / expected_file
         assert copied_file.exists()
 
