@@ -1,3 +1,14 @@
+"""
+    This module provides the command line functions that bring together the 
+    obsidian utility functionality. The command line interface is built using 
+    the Click library, which provides a simple and easy-to-use interface for 
+    Python command line applications.
+
+    Author: Jason Boyd
+    Date: January 6, 2025
+    Modified: January 14, 2025
+"""
+
 import click
 import pathlib
 from templates import copy_template as ct
