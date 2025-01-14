@@ -19,7 +19,7 @@ copy-template = "obsidian_utilities.obsidian_utilities:copy_template"
 
 
 [tool.poetry.dependencies]
-python = "^3.10.12"
+python = "^3.12.0"
 click = "^8.1.8"
 
 
