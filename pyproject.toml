@@ -1,6 +1,6 @@
-[tool.poetry]
+[project]
 name = "obsidian-utilities"
-version = "0.0.2"
+version = "0.0.3"
 description = "Fundamental utilities that can be applied to multiple notes that live with the Obsidian application."
 authors = ["Jason Boyd <jasonboyd99@gmail.com>"]
 maintainers = ["Jason Boyd <jasonboyd99@gmail.com>"]
@@ -8,6 +8,23 @@ repository = "https://github.com/itsjaboyd/obsidian-utilities"
 keywords = ["obsidian", "notes"]
 readme = "README.md"
 license = "MIT"
+
+[tool.poetry]
+name = "obsidian-utilities"
+version = "0.0.3"
+description = "Fundamental utilities that can be applied to multiple notes that live with the Obsidian application."
+authors = ["Jason Boyd <jasonboyd99@gmail.com>"]
+maintainers = ["Jason Boyd <jasonboyd99@gmail.com>"]
+repository = "https://github.com/itsjaboyd/obsidian-utilities"
+keywords = ["obsidian", "notes"]
+readme = "README.md"
+license = "MIT"
+include = ["CHANGELOG.md", "LICENSE", "README.md"]
+packages = [
+    { include = "configuration", from = "src" },
+    { include = "templates", from = "src" },
+    { include = "obsidian_utilities", from = "src" },
+]
 
 
 [application.config]

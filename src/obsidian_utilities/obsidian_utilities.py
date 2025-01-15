@@ -31,7 +31,7 @@ def copy_template(filename, destination, uf, n):
         n (int): the number of copies to make of the template file.
     """
 
-    results, usable_filename = False, check_template_configuration(filename)
+    results, usable_filename = [False], check_template_configuration(filename)
     try: # attempt to copy the template file to the destination using templates module
         click.echo(f"Copying template file '{filename.name}' {n} time(s) to {destination.name}/.")
         results = ct.copy_template(usable_filename, destination, use_formatting=uf, number_copies=n)
