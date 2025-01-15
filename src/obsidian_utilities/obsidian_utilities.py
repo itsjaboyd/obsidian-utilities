@@ -9,6 +9,12 @@
     Modified: January 14, 2025
 """
 
+# TODO:
+# - [ ] Add a command to list all available templates in the template directory.
+# - [ ] Provide unit testing for click application and command line functions.
+# - [ ] Format package to PEP8 style using Black or some other automatic formatter.
+
+
 import click
 import pathlib
 from templates import copy_template as ct

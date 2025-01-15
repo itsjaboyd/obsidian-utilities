@@ -8,6 +8,15 @@
     Modified: January 14, 2025
 """
 
+# TODO:
+# - [ ] Use TOML for configuration files instead of INI (there is no standard for INI).
+# - [ ] Use a TOML file located in configuration package to dicate names and config paths
+#       instead of the pyproject.toml which actually doesn't "exist" in this package.
+# - [ ] Write unit tests for this package and try to utilize local configuration files 
+#       instead of your own system level configuration file.
+# - [ ] Format package to PEP8 style using Black or some other automatic formatter.
+
+
 import configparser
 import tomllib
 import pathlib
