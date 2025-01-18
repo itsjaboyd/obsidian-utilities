@@ -27,10 +27,6 @@ packages = [
 ]
 
 
-[application.config]
-config = "obsidian-utilities.ini"
-
-
 [tool.poetry.scripts]
 copy-template = "obsidian_utilities.obsidian_utilities:copy_template"
 

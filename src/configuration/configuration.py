@@ -8,27 +8,18 @@
     Modified: January 14, 2025
 """
 
-# TODO:
-# - [ ] Use TOML for configuration files instead of INI (there is no standard for INI).
-# - [ ] Use a TOML file located in configuration package to dicate names and config paths
-#       instead of the pyproject.toml which actually doesn't "exist" in this package.
-# - [ ] Write unit tests for this package and try to utilize local configuration files 
-#       instead of your own system level configuration file.
-# - [ ] Format package to PEP8 style using Black or some other automatic formatter.
-
-
 import configparser
 import tomllib
 import pathlib
 
 # load the projects toml configuration for application items
-with open("pyproject.toml", "rb") as f:
+with open("configuration.toml", "rb") as f:
     PROJECT_CONFIGURATION = tomllib.load(f)
 
 # get the name of the application and name of configuration file
 NAMES = (
-    PROJECT_CONFIGURATION["tool"]["poetry"]["name"],
-    PROJECT_CONFIGURATION["application"]["config"]["config"],
+    PROJECT_CONFIGURATION["project"]["name"],
+    PROJECT_CONFIGURATION["application"]["config"],
 )
 
 # create the possible configuration file paths to search for
