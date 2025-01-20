@@ -1,124 +1,148 @@
 """
     Utilize a configuration file for loading and saving common configuration 
-    settings used by the application. This module utilizes Python's configparser 
-    to utilize a .ini style configuration file.
+    settings used by the application. This module utilizes the tomlkit package 
+    for parsing and writing to a TOML configuration file.
 
     Author: Jason Boyd
     Date: January 6, 2025
-    Modified: January 14, 2025
+    Modified: January 18, 2025
 """
 
-import configparser
-import tomllib
 import pathlib
+import tomlkit
+import platformdirs
+
 
 # load the projects toml configuration for application items
-with open("configuration.toml", "rb") as f:
-    PROJECT_CONFIGURATION = tomllib.load(f)
+module_parent = pathlib.Path(__file__).parent.parent.parent
+configuration_toml = module_parent / "pyproject.toml"
 
-# get the name of the application and name of configuration file
-NAMES = (
-    PROJECT_CONFIGURATION["project"]["name"],
-    PROJECT_CONFIGURATION["application"]["config"],
-)
+try: # attempt to get the project config from package structure
+    with open(configuration_toml, "r") as f:
+        PROJECT_TOML = tomlkit.load(f)
 
-# create the possible configuration file paths to search for
-CONFIGURATION_PATHS = (
-    pathlib.Path.home() / ".config" / NAMES[0] / NAMES[1],
-    pathlib.Path.cwd() / ".config" / NAMES[0] / NAMES[1],
-)
+    # get the name of the application and name of configuration file
+    PROJECT_NAMES = (
+        PROJECT_TOML["project"]["name"],
+        PROJECT_TOML["project"]["authors"],
+        PROJECT_TOML["application"]["config"],
+    )
+except FileNotFoundError as fnfe:
+    print(f"{fnfe}\nProject configuration does not exist: {configuration_toml.resolve()}")
+    PROJECT_NAMES = ("obsidian-utilities", "obsidian-utilities.toml")
 
 
-def get_configuration_path():
-    """Find and return the currently existing configuration file path, in 
-        order of priority starting with the users home directory, to the 
-        project working directory.
-
-    Returns:
-        pathlib.Path: the newly created or already-existing configuration 
-            file path that the application will use for configuration.
-    """
-    home_config = initialize_configuration_path(CONFIGURATION_PATHS[0])
-    if home_config is not None:
-        return home_config
-    
-    local_config = initialize_configuration_path(CONFIGURATION_PATHS[1])
-    if local_config is not None:
-        return local_config
-    
-def initialize_configuration_path(configuration_path):
-    """Given a supposed configuration path, return if it exists, otherwise 
-        step up through the parent directories to create the configuration 
-        file and return the newly created, usable configuration file path.
-
-    Args:
-        configuration_path (pathlib.Path): the path to the configuration 
-            file in question that will be used to identify.
+class Configuration:
+    """The Configuration class is used to load and save configuration settings 
+        for the application. The configuration file is a TOML file that is loaded
+        and saved using the tomlkit package. This class utlizes the platformdirs 
+        package for a usable user configuration directory.
 
     Returns:
-        pathlib.Path: the already-existing or newly created by the function 
-            configuration file path to use.
+        Configuration: the Configuration object that is used to load and save 
+            configuration settings for the application.
     """
 
-    if configuration_path.exists():
-        return configuration_path
-    elif configuration_path.parent.exists():
-        configuration_path.touch(exist_ok=True)
-        create_default_configuration(configuration_path)
-        return configuration_path
-    elif configuration_path.parent.parent.exists():
-        configuration_path.parent.mkdir()
-        configuration_path.touch(exist_ok=True)
-        create_default_configuration(configuration_path)
-        return configuration_path
-    return None
+    def __init__(self):
+        """Find a suitable configuration path with platformdirs suggestion and 
+            then create a default configuration file if one doesn't already 
+            exist at the found confguration path.
+        """
 
-def create_default_configuration(configuration_path):
-    """Given a configuration file path, create a default configuration file 
-        with the default sections and keys that the application will use.
+        self.user_configuration_path = platformdirs.user_config_path(
+            PROJECT_NAMES[0],
+            PROJECT_NAMES[1],
+            ensure_exists=True
+        )
+        self.user_configuration_file = self.user_configuration_path / PROJECT_NAMES[2]
+        if not self.user_configuration_file.is_file():
+            self.user_configuration_file.touch()
+            default_configuration = self.create_default_toml()
+            self.write_configuration(default_configuration)
 
-    Args:
-        configuration_path (pathlib.Path): the path to the configuration file 
-            that will be created and updated with default values.
-    """
 
-    configuration_contents = [
-        "[DEFAULT]\n",
-        "\n",
-        "[TEMPLATE]\n",
-        "directory =\n",
-        "\n",
-        "[DAILY]\n",
-        "directory =\n",
-    ]
-    with open(configuration_path, "w") as f:
-        f.writelines(configuration_contents)
+    def __str__(self):
+        """Return a stringified version of the Configuration instance.
 
-def get_configuration():
-    """Get the parsed configuration object from the configuration file 
-        for the application.
+        Returns:
+            str: the Configuration instance's config path and file.
+        """
 
-    Returns:
-        configParser.ConfigParser: the parsed configuration object that 
-            the application uses.
-    """
-    found_configuration = get_configuration_path()
-    configuration = configparser.ConfigParser()
-    configuration.read(found_configuration)
-    return configuration
-
-def update_configuration(section, key, value):
-    """Given a section, key, and value, update the configuration file with 
-        the new values supplied by the caller.
-
-    Args:
-        section (str): the section header the key and value belong to.
-        key (str): the key that will be updated with the new value.
-        value (str): the value that will be updated in the configuration file.
-    """
+        self_string = "Configuration Object\n"
+        self_string += f"User Config Path: {self.user_configuration_path}\n"
+        self_string += f"User Config File: {self.user_configuration_file}"
+        return self_string
     
-    config = get_configuration()
-    config.set(section, key, value)
-    with open(get_configuration_path(), "w") as f:
-        config.write(f)
+
+    def get_configuration(self):
+        """Read the configuration file saved in the Configuration object and 
+            return its contents as a tomlkit TOMLDocument object.
+
+        Returns:
+            tomlkit.TOMLDocument: the loaded TOMLDocument found at the 
+                configuration file location.
+        """
+
+        with open(self.user_configuration_file, "r") as cf:
+            current_configuration = tomlkit.load(cf)
+        return current_configuration
     
+
+    def write_configuration(self, new_toml):
+        """Write the new_toml TOMLDocument object to the saved configuration 
+            file location, overwriting any previous configuration with the 
+            new_toml object.
+
+        Args:
+            new_toml (tomlkit.TOMLDocument): the new TOMLDocument object to 
+                write at the configuration file location.
+
+        Raises:
+            ValueError: if the supplied new_toml argument is not of 
+                TOMLDocument type.
+        """
+
+        if not isinstance(new_toml, tomlkit.toml_document.TOMLDocument):
+            raise ValueError("The configuration object must be of TOMLDocument type.")
+
+        with open(self.user_configuration_file, "w") as cf:
+            tomlkit.dump(new_toml, cf)
+
+
+    def update_configuration(self, section, key, value):
+        """Update the current configuration file with value that is found 
+            under a secion and key, creating a new section and key if they 
+            don't already exist.
+
+        Args:
+            section (str): the section header that the key and value belong to.
+            key (str): the key that the value will be assigned to.
+            value (str): the value that will be assigned to the key under section.
+        """
+
+        current_configuration = self.get_configuration()
+        if section not in current_configuration:
+            current_configuration.add(section, {})
+        current_configuration[section][key] = value
+        self.write_configuration(current_configuration)
+
+
+    @staticmethod
+    def create_default_toml():
+        """Create a default tomlkit.TOMLDocument object structure that the 
+            application will utilize during runtime.
+
+        Returns:
+            tomlkit.TOMLDocument: the final default TOMLDocument that the 
+                application will utilize.
+        """
+
+        configuration_contents = tomlkit.document()
+        configuration_comment = tomlkit.comment("Application Configuration")
+        configuration_contents.add(configuration_comment)
+        paths = tomlkit.table()
+        paths.add("templates", "")
+        paths.add("dailys", "")
+        configuration_contents.add("PATHS", paths)
+        print(type(configuration_contents))
+        return configuration_contents

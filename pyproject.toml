@@ -1,6 +1,6 @@
 [project]
 name = "obsidian-utilities"
-version = "0.0.3"
+version = "0.0.4"
 description = "Fundamental utilities that can be applied to multiple notes that live with the Obsidian application."
 authors = ["Jason Boyd <jasonboyd99@gmail.com>"]
 maintainers = ["Jason Boyd <jasonboyd99@gmail.com>"]
@@ -8,6 +8,11 @@ repository = "https://github.com/itsjaboyd/obsidian-utilities"
 keywords = ["obsidian", "notes"]
 readme = "README.md"
 license = "MIT"
+
+
+[application]
+config = "obsidian-utilities.toml"
+
 
 [tool.poetry]
 name = "obsidian-utilities"
@@ -34,6 +39,8 @@ copy-template = "obsidian_utilities.obsidian_utilities:copy_template"
 [tool.poetry.dependencies]
 python = "^3.12.0"
 click = "^8.1.8"
+tomlkit = "^0.13.2"
+platformdirs = "^4.3.6"
 
 
 [tool.poetry.group.test.dependencies]
