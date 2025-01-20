@@ -59,6 +59,41 @@ class Configuration:
             self.user_configuration_file.touch()
             default_configuration = self.create_default_toml()
             self.write_configuration(default_configuration)
+    
+    
+    def __init__(self, supplied_configuration_path):
+        """Given a supplied configuration path, save the appropriate paths for 
+            the class and possibly create the default configuration required if 
+            the caller supplied a directory.
+
+        Args:
+            supplied_configuration_path (str, pathlib.Path): the caller-supplied 
+                configuration path object to create or return configuration against.
+
+        Raises:
+            ValueError: if the supplied configuration path does not exist.
+        """
+
+        if not isinstance(configuration_path, pathlib.Path):
+            configuration_path = pathlib.Path(supplied_configuration_path)
+
+        if not configuration_path.exists():
+            raise ValueError(f"Supplied configuration path does not exist: {configuration_path}")
+        
+        if configuration_path.is_file():
+            self.user_configuration_file = configuration_path
+            self.user_configuration_path = configuration_path.parent
+            return
+        
+        if configuration_path.is_dir():
+            self.user_configuration_path = configuration_path
+            configuration_file = configuration_path / PROJECT_NAMES[2]
+            self.user_configuration_file = configuration_file
+            if configuration_file.exists():
+                return
+        # if the configuration directory exists but no configuration file, create it
+        default_toml = self.create_default_toml()
+        self.write_configuration(default_toml)
 
 
     def __str__(self):
@@ -144,5 +179,4 @@ class Configuration:
         paths.add("templates", "")
         paths.add("dailys", "")
         configuration_contents.add("PATHS", paths)
-        print(type(configuration_contents))
         return configuration_contents
