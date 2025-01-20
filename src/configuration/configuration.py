@@ -43,57 +43,24 @@ class Configuration:
             configuration settings for the application.
     """
 
-    def __init__(self):
+    def __init__(self, supplied_path=None):
         """Find a suitable configuration path with platformdirs suggestion and 
             then create a default configuration file if one doesn't already 
             exist at the found confguration path.
         """
 
-        self.user_configuration_path = platformdirs.user_config_path(
-            PROJECT_NAMES[0],
-            PROJECT_NAMES[1],
-            ensure_exists=True
-        )
-        self.user_configuration_file = self.user_configuration_path / PROJECT_NAMES[2]
+        if supplied_path is None:
+            user_config_object = self.handle_platformdirs_path()
+        else: # creator specified a path for configuration to use
+            user_config_object = self.handle_supplied_path(supplied_path)
+
+        self.user_configuration_file = user_config_object[0]
+        self.user_configuration_path = user_config_object[1]
+
+        # if the configuration file does not exist then create a default
         if not self.user_configuration_file.is_file():
-            self.user_configuration_file.touch()
             default_configuration = self.create_default_toml()
             self.write_configuration(default_configuration)
-    
-    
-    def __init__(self, supplied_configuration_path):
-        """Given a supplied configuration path, save the appropriate paths for 
-            the class and possibly create the default configuration required if 
-            the caller supplied a directory.
-
-        Args:
-            supplied_configuration_path (str, pathlib.Path): the caller-supplied 
-                configuration path object to create or return configuration against.
-
-        Raises:
-            ValueError: if the supplied configuration path does not exist.
-        """
-
-        if not isinstance(configuration_path, pathlib.Path):
-            configuration_path = pathlib.Path(supplied_configuration_path)
-
-        if not configuration_path.exists():
-            raise ValueError(f"Supplied configuration path does not exist: {configuration_path}")
-        
-        if configuration_path.is_file():
-            self.user_configuration_file = configuration_path
-            self.user_configuration_path = configuration_path.parent
-            return
-        
-        if configuration_path.is_dir():
-            self.user_configuration_path = configuration_path
-            configuration_file = configuration_path / PROJECT_NAMES[2]
-            self.user_configuration_file = configuration_file
-            if configuration_file.exists():
-                return
-        # if the configuration directory exists but no configuration file, create it
-        default_toml = self.create_default_toml()
-        self.write_configuration(default_toml)
 
 
     def __str__(self):
@@ -161,6 +128,58 @@ class Configuration:
         current_configuration[section][key] = value
         self.write_configuration(current_configuration)
 
+
+    @staticmethod
+    def handle_platformdirs_path():
+        """Find a usable configuration path location and a usable configuration 
+            file name from the platformdirs package for configuration use within 
+            the application.
+
+        Returns:
+            tuple: the (file, path) combination found by platformdirs, creating 
+                the configuration directory if it doesn't already exist.
+        """
+
+        user_configuration_path = platformdirs.user_config_path(
+            PROJECT_NAMES[0],
+            PROJECT_NAMES[1],
+            ensure_exists=True
+        )
+        user_configuration_file = user_configuration_path / PROJECT_NAMES[2]
+        return (user_configuration_file, user_configuration_path)
+
+
+    @staticmethod
+    def handle_supplied_path(supplied_path):
+        """Given a supplied path, generate names for a configuration directory 
+            and file, making sure that the configuration directory exists.
+
+        Args:
+            supplied_path (str, pathlib.Path): the caller-supplied path to 
+                generate directory and file names from.
+
+        Raises:
+            ValueError: if the supplied path as a directory does not exist 
+                in the filesystem.
+
+        Returns:
+            tuple: the config file and path names in tuple form (file, path).
+        """
+
+        configuration_path = supplied_path
+        if not isinstance(supplied_path, pathlib.Path):
+            configuration_path = pathlib.Path(supplied_path)
+
+        if not configuration_path.exists():
+            raise ValueError(f"Supplied configuration path does not exist: {configuration_path}")
+        
+        if configuration_path.is_file():
+            return (configuration_path, configuration_path.parent)
+        
+        if configuration_path.is_dir():
+            configuration_file = configuration_path / PROJECT_NAMES[2]
+        return (configuration_file, configuration_path)
+    
 
     @staticmethod
     def create_default_toml():
