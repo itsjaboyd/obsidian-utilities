@@ -15,23 +15,18 @@ class TestConfiguration:
         with pytest.raises(ValueError):
             dne_path = tmp_path / "dne-path"
             cf.Configuration(supplied_path=dne_path)
-        
-        good_path_one = tmp_path / "test-config-path-one"
-        good_path_one.mkdir()
-        good_file_one = good_path_one / cf.PROJECT_NAMES[2]
-        good_file_one.touch() # create a config file so a default isn't created
-        config = cf.Configuration(supplied_path=good_file_one)
-        assert config.user_configuration_path.resolve() == good_path_one.resolve()
-        assert config.user_configuration_file.resolve() == good_file_one.resolve()
+    
+        test_path, test_file = self.create_path_file(tmp_path, "tcpa", empty_file=True)
+        config = cf.Configuration(supplied_path=test_file)
+        assert config.user_configuration_path.resolve() == test_path.resolve()
+        assert config.user_configuration_file.resolve() == test_file.resolve()
         assert config.user_configuration_file.stat().st_size == 0
         
-        good_path_two = tmp_path / "test-config-path-two"
-        good_path_two.mkdir()
-        good_file_two = good_path_two / cf.PROJECT_NAMES[2]
-        for create_element in [good_path_two, good_file_two]:
+        test_path, test_file = self.create_path_file(tmp_path, "tcpb")
+        for create_element in [test_path, test_file]:
             config = cf.Configuration(supplied_path=create_element)
-            assert config.user_configuration_path.resolve() == good_path_two.resolve()
-            assert config.user_configuration_file.resolve() == good_file_two.resolve()
+            assert config.user_configuration_path.resolve() == test_path.resolve()
+            assert config.user_configuration_file.resolve() == test_file.resolve()
             assert config.create_default_toml() == config.get_configuration()
 
 
@@ -43,44 +38,73 @@ class TestConfiguration:
         config_string += f"User Config File: {platform_paths[1]}"
         assert str(config) == config_string
 
-        good_path = tmp_path / "test-config-path-one"
-        good_path.mkdir()
-        good_file = good_path / cf.PROJECT_NAMES[2]
-        for create_element in [good_path, good_file]:
+        test_path, test_file = self.create_path_file(tmp_path, "tcpa")
+        for create_element in [test_path, test_file]:
             config = cf.Configuration(supplied_path=create_element)
             config_string = "Configuration Object\n"
-            config_string += f"User Config Path: {good_path}\n"
-            config_string += f"User Config File: {good_file}"
+            config_string += f"User Config Path: {test_path}\n"
+            config_string += f"User Config File: {test_file}"
             assert str(config) == config_string
         
 
     def test_get_configuration(self, tmp_path):
-        good_path = tmp_path / "test-config-path-one"
-        good_path.mkdir()
-        config = cf.Configuration(supplied_path=good_path)
+        test_path, test_file = self.create_path_file(tmp_path, "tcpa", "cc.toml")
+        config = cf.Configuration(supplied_path=test_path)
         assert config.create_default_toml() == config.get_configuration()
         assert isinstance(config.get_configuration(), tomlkit.TOMLDocument)
 
-        modified_toml = tomlkit.document()
-        testing_table = tomlkit.table()
-        testing_table.add("name", "test-name")
-        testing_table.add("result", "test-result")
-        modified_toml.add("TESTING", testing_table)
+        test_file.touch()
+        config = cf.Configuration(supplied_path=test_file)
+        # an empty file is essentially just an empty tomlkit document
+        assert tomlkit.document() == config.get_configuration()
+        assert isinstance(config.get_configuration(), tomlkit.TOMLDocument)
+
+        modified_toml = self.create_testing_toml()
         config.write_configuration(modified_toml)
         assert modified_toml == config.get_configuration()
         assert isinstance(config.get_configuration(), tomlkit.TOMLDocument)
         
 
+    def test_write_configuration(self, tmp_path):
+        test_path, test_file = self.create_path_file(tmp_path, "tcpa")
+        config = cf.Configuration(supplied_path=test_path)
+
+        with pytest.raises(ValueError):
+            config.write_configuration(None)
+
+        test_toml = self.create_testing_toml()
+        assert config.create_default_toml() == config.get_configuration()
+        config.write_configuration(test_toml)
+        assert test_toml == config.get_configuration()
 
 
-    def test_write_configuration(self):
-        pass
+    def test_update_configuration(self, tmp_path):
+        test_path, test_file = self.create_path_file(tmp_path, "tcpa")
+        config = cf.Configuration(supplied_path=test_path)
+        
+        matching_toml = config.create_default_toml()
+        runtime_table = tomlkit.table()
+        runtime_table.add("purpose", "notes")
+        matching_toml.add("RUNTIME", runtime_table)
+        config.update_configuration("RUNTIME", "purpose", "notes")
+        assert matching_toml == config.get_configuration()
 
-    def test_update_configuration(self):
-        pass
+        matching_toml["PATHS"]["templates"] = "testing"
+        config.update_configuration("PATHS", "templates", "testing")
+        assert matching_toml == config.get_configuration()
 
-    def test_create_deafult_toml(self):
-        pass
+
+
+    def test_create_deafult_toml(self, tmp_path):
+        config = cf.Configuration(supplied_path=tmp_path)
+        configuration_contents = tomlkit.document()
+        configuration_comment = tomlkit.comment("Application Configuration")
+        configuration_contents.add(configuration_comment)
+        paths = tomlkit.table()
+        paths.add("templates", "")
+        paths.add("dailys", "")
+        configuration_contents.add("PATHS", paths)
+        assert config.create_default_toml() == configuration_contents
 
 
     @staticmethod
@@ -93,4 +117,29 @@ class TestConfiguration:
         user_path_platform = path_platform
         user_file_platform = path_platform / cf.PROJECT_NAMES[2] 
         return (user_path_platform, user_file_platform)
+    
+
+    @staticmethod
+    def create_path_file(
+        input_path,
+        path_name,
+        file_name=cf.PROJECT_NAMES[2],
+        empty_file=False
+    ):
+        configuration_path = input_path / path_name
+        configuration_path.mkdir()
+        configuration_file = configuration_path / file_name
+        if empty_file:
+            configuration_file.touch()
+        return (configuration_path, configuration_file)
+    
+
+    @staticmethod
+    def create_testing_toml():
+        modified_toml = tomlkit.document()
+        testing_table = tomlkit.table()
+        testing_table.add("name", "test-name")
+        testing_table.add("result", "test-result")
+        modified_toml.add("TESTING", testing_table)
+        return modified_toml
     
