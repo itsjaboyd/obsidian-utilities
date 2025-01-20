@@ -8,14 +8,8 @@
 
     Author: Jason Boyd
     Date: January 3, 2025
-    Modified: January 9, 2025
+    Modified: January 20, 2025
 """
-
-# TODO:
-# - [ ] Add checks to copy ensuring target directory can handle expected filenames.
-# - [ ] Create main template module that imports copy_template and other future modules.
-# - [ ] Format package to PEP8 style using Black or some other automatic formatter.
-
 
 import pathlib
 import datetime
