@@ -51,11 +51,11 @@ def find_common_position_characters(string_list):
 
 
 def iso_proper_length_parts(iso_part_list):
-    """Given an ISO-spearated parts list, determine if the lengths of its parts are 
+    """Given an ISO-spearated parts list, determine if the lengths of its parts are
         ISO-formatted worthy.
 
     Args:
-        iso_part_list (list): the parts of an ISO string that the function checks 
+        iso_part_list (list): the parts of an ISO string that the function checks
             lengths against to determine ISO-formatted worthiness.
 
     Returns:
@@ -76,11 +76,11 @@ def iso_proper_length_parts(iso_part_list):
 
 
 def process_template_location(template_object):
-    """Given a template object (should be str), perform checks to ensure the supplied 
+    """Given a template object (should be str), perform checks to ensure the supplied
         path exists and is an actual file and not a directory to be copied from.
 
     Args:
-        template_object (str or path-like object): the template path to analyze 
+        template_object (str or path-like object): the template path to analyze
             and create a pathlib.Path from.
 
     Raises:
@@ -90,33 +90,35 @@ def process_template_location(template_object):
     Returns:
         pathlib.Path: the Path() created from processing the template object.
     """
-    
+
     # grab the resolved path from the template_object location for processing
     path_instance = pathlib.Path(template_object).resolve()
 
-    if path_instance.name == template_object: # caller just supplied a name of file
+    if path_instance.name == template_object:  # caller just supplied a name of file
         # TODO: check to see if program has template path saved
         template_saved = False
         if not template_saved:
             raise FileNotFoundError(f"Template location not found: {template_object}")
-        
+
     if not path_instance.exists():
         raise FileNotFoundError(f"Template object does not exist: {template_object}")
     if path_instance.is_dir():
         raise IsADirectoryError(f"Template object is a directory: {template_object}")
     if not path_instance.is_file():
-        raise FileNotFoundError(f"Template object is not a valid file: {template_object}")
-    
+        raise FileNotFoundError(
+            f"Template object is not a valid file: {template_object}"
+        )
+
     # determined that template_object is a good file for copying from
     return path_instance
 
 
 def process_directory_location(target_directory):
-    """Given a target directory (should be str), perform checks to ensure the 
+    """Given a target directory (should be str), perform checks to ensure the
         supplied directory exists and can be used to copy to.
 
     Args:
-        target_directory (str or path-like object): the target path to analayze 
+        target_directory (str or path-like object): the target path to analayze
             and create a pathlib.Path from.
 
     Raises:
@@ -129,16 +131,20 @@ def process_directory_location(target_directory):
 
     path_instance = pathlib.Path(target_directory).resolve()
 
-    if path_instance.name == target_directory: # caller supplied a name of directory
-        raise FileNotFoundError(f"Target directory should be directory path: {target_directory}")
-    
+    if path_instance.name == target_directory:  # caller supplied a name of directory
+        raise FileNotFoundError(
+            f"Target directory should be directory path: {target_directory}"
+        )
+
     if not path_instance.exists():
         raise FileNotFoundError(f"Target directory does not exist: {target_directory}")
     if path_instance.is_file():
         raise NotADirectoryError(f"Target directory is a file: {target_directory}")
     if not path_instance.is_dir():
-        raise FileNotFoundError(f"Target directory is not a valid directory: {target_directory}")
-    
+        raise FileNotFoundError(
+            f"Target directory is not a valid directory: {target_directory}"
+        )
+
     # determined that target_directory is a good directory for copying to
     return path_instance
 
@@ -151,16 +157,15 @@ def iso_formatted_string(iso_string, common_characters):
         common_characters (iterable): the common characters to check formatting against.
 
     Returns:
-        tuple: two elements, the first bool telling if iso_string is ISO-formatted, and 
+        tuple: two elements, the first bool telling if iso_string is ISO-formatted, and
             the second string denoting the character that separates the ISO elements.
     """
 
-    
     use_iso_string = str(iso_string)
     iso_separated_char = None
     if len(use_iso_string) not in [8, 10]:
         return (False, None)
-    
+
     if len(iso_string) == 10:
         for common_char in common_characters:
             split_iso = iso_string.split(common_char)
@@ -173,10 +178,10 @@ def iso_formatted_string(iso_string, common_characters):
         return (True, iso_separated_char)
     except:
         return (False, iso_separated_char)
-    
+
 
 def iso_formatted_list(string_list, common_characters):
-    """Determine if a string list has all ISO-formatted elements based on a list of 
+    """Determine if a string list has all ISO-formatted elements based on a list of
         common characters.
 
 
@@ -185,16 +190,18 @@ def iso_formatted_list(string_list, common_characters):
         common_characters (iterable): the common characters to check formatting against.
 
     Returns:
-        tuple: two elements, the first bool telling if all list elements are ISO-formatted, 
+        tuple: two elements, the first bool telling if all list elements are ISO-formatted,
             and the second string denoting the character that separates the ISO elements.
     """
 
-    iso_formatted_results = [iso_formatted_string(ifi, common_characters) for ifi in string_list]
+    iso_formatted_results = [
+        iso_formatted_string(ifi, common_characters) for ifi in string_list
+    ]
     results = list(zip(*iso_formatted_results))
     if all(results[0]) and len(set(results[1])) <= 1:
         return (True, results[1][-1])
     return (False, None)
-    
+
 
 def copy_template_handler(template_path, target_file):
     """Handler function that actually does the copying of template_path using shutil.
@@ -210,13 +217,13 @@ def copy_template_handler(template_path, target_file):
     Returns:
         bool: wether the copy of template_path to target_file succeeded or not.
     """
-    
+
     if target_file.is_file():
         raise FileExistsError(f"Target file already exists: {target_file}")
     elif target_file.is_dir():
         raise IsADirectoryError(f"Target file is a directory: {target_file}")
-    
-    try: # attempt to perform the actual copy of the template into target
+
+    try:  # attempt to perform the actual copy of the template into target
         shutil.copy(template_path, target_file)
         return True
     except:
@@ -229,8 +236,8 @@ def copy_template_single(template_path, target_path, use_formatting=True):
     Args:
         template_path (pathlib.Path): the template file path to copy from
         target_path (pathlib.Path): the target directory path to copy into
-        use_formatting (bool, optional): optionally use potentially existing formatting 
-        in the target directory. If ISO formatting is found, the copied file will 
+        use_formatting (bool, optional): optionally use potentially existing formatting
+        in the target directory. If ISO formatting is found, the copied file will
         utilize today's date as its file name. Defaults to True.
 
     Returns:
@@ -250,13 +257,15 @@ def copy_template_single(template_path, target_path, use_formatting=True):
             todays_date_iso = datetime.date.today().isoformat()
             todays_file_name = template_path.stem + "-copy" + template_path.suffix
             found_separator = analyze_results["formatting_separator"]
-            todays_file_name = todays_date_iso.replace("-", found_separator if found_separator else "")
+            todays_file_name = todays_date_iso.replace(
+                "-", found_separator if found_separator else ""
+            )
             todays_file_full = todays_file_name + template_path.suffix
             single_file = target_path.joinpath(todays_file_full)
         case _:
             pass
     return [copy_template_handler(template_path, single_file)]
-        
+
 
 def copy_template_multiple(template_path, target_path, number_copies=1):
     """Copy template file to the target path number_copies times.
@@ -264,7 +273,7 @@ def copy_template_multiple(template_path, target_path, number_copies=1):
     Args:
         template_path (pathlib.Path): the template file path to copy from
         target_path (pathlib.Path): the target directory path to copy into
-        number_copies (int): the number of copies to make of template_path 
+        number_copies (int): the number of copies to make of template_path
             into target_path.
 
     Returns:
@@ -279,15 +288,17 @@ def copy_template_multiple(template_path, target_path, number_copies=1):
     return results
 
 
-def copy_template(template_object, target_directory, use_formatting=True, number_copies=1):
+def copy_template(
+    template_object, target_directory, use_formatting=True, number_copies=1
+):
     """The top-level copy function that should be used by the caller.
 
     Args:
         template_object (str): the template file path that will be used to copy from
         target_directory (str): the target directory the copy will be copied into
-        use_formatting (bool, optional): optionally follow formatting present in 
+        use_formatting (bool, optional): optionally follow formatting present in
             target_directory, and defaults to True.
-        number_copies (int, optional): the number of copies to make of the template_object 
+        number_copies (int, optional): the number of copies to make of the template_object
             into target_directory, and defaults to 1.
 
     Raises:
@@ -297,27 +308,31 @@ def copy_template(template_object, target_directory, use_formatting=True, number
         bool: wether the copy succeeded or not based on further function calls.
     """
 
-    if number_copies < 0: # cannot copy less than zero times
+    if number_copies < 0:  # cannot copy less than zero times
         raise ValueError(f"Cannot copy notes {number_copies} of times")
 
     template_path = process_template_location(template_object)
     target_path = process_directory_location(target_directory)
 
     if number_copies == 1:
-        return copy_template_single(template_path, target_path, use_formatting=use_formatting)
-    return copy_template_multiple(template_path, target_path, number_copies=number_copies)
+        return copy_template_single(
+            template_path, target_path, use_formatting=use_formatting
+        )
+    return copy_template_multiple(
+        template_path, target_path, number_copies=number_copies
+    )
 
 
 def analyze_directory(directory):
-    """Given a directory, analyze the files within and determine if they match some 
+    """Given a directory, analyze the files within and determine if they match some
         sort of formatting pattern.
 
     Args:
         directory (str): the directory to analyze against.
 
     Returns:
-        dict: the information object that contains elements that include if formatting 
-            was detected, the formatting type that was detected, and the separator 
+        dict: the information object that contains elements that include if formatting
+            was detected, the formatting type that was detected, and the separator
             between formatted elements.
     """
 
@@ -326,7 +341,7 @@ def analyze_directory(directory):
         "formatting_type": None,
         "formatting_separator": None,
     }
-    
+
     path_directory = process_directory_location(directory)
     files = path_directory.iterdir()
     stem_names = [f.stem for f in files]
@@ -338,11 +353,13 @@ def analyze_directory(directory):
     # file names have different lengths, don't process for patterns
     if compute_spread(stem_names) > 0:
         return return_object
-    
+
     common_characters = find_common_position_characters(stem_names)
 
     # could be an ISO formatted date naming convention in directory
-    iso_formatted_files, split_common_char = iso_formatted_list(stem_names, common_characters)
+    iso_formatted_files, split_common_char = iso_formatted_list(
+        stem_names, common_characters
+    )
     if iso_formatted_files:
         return_object = {
             "detected_formatting": True,
