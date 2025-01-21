@@ -12,7 +12,45 @@
 import click
 import pathlib
 from templates import copy_template as ct
-from configuration import configuration as cfg
+from templates import templates as tp
+from configuration import configuration as cf
+
+
+@click.command()
+@click.option(
+    "-dir",
+    "--directory",
+    default=None,
+    required=False,
+    type=click.Path(dir_okay=True, path_type=pathlib.Path),
+    help="Use a supplied directory to obtain directory information.",
+)
+@click.option(
+    "-uc",
+    "--use-config",
+    default="templates",
+    show_default=True,
+    required=False,
+    help="Use a saved path in configuration to obtain directory information.",
+)
+def directory_information(directory, use_config):
+    if directory is not None:
+        attempt_directory_information(directory)
+        return
+
+    config = cf.Configuration()
+    directory_path = config.get_configuration()["PATHS"][use_config]
+    attempt_directory_information(directory_path)
+
+
+def attempt_directory_information(directory):
+    try:  # attempt to print the neat table information for directory
+        result = tp.create_directory_information(directory)
+        click.echo(result)
+    except:  # some exception was raised in the table generation process
+        click.echo(
+            f"Cannot gather information as directory does not exist: '{directory}'"
+        )
 
 
 @click.command()
@@ -23,14 +61,14 @@ from configuration import configuration as cfg
     "destination", required=True, type=click.Path(dir_okay=True, path_type=pathlib.Path)
 )
 @click.option(
-    "--uf",
+    "-uf",
     "--use-formatting",
     is_flag=True,
     default=False,
     help="Use formatting found in the destination.",
 )
 @click.option(
-    "--n",
+    "-n",
     "--number-copies",
     type=int,
     default=1,
@@ -81,9 +119,8 @@ def check_template_configuration(template_file):
         pathlib.Path: the usable path to copy the template file from.
     """
 
-    configured_template_path = cfg.get_configuration().get(
-        "TEMPLATE", "directory", fallback=None
-    )
+    config = cf.Configuration()
+    configured_template_path = config.get_configuration()["PATHS"]["templates"]
     just_filename_supplied = str(template_file) == template_file.name
     handled_template_configuration = False
     # if just a filename was supplied, then use configured template path / filename
@@ -98,7 +135,7 @@ def check_template_configuration(template_file):
         if not configured_template_path:
             confirm_message = f"Would you like to set the default template directory to {template_parent_path}?"
             if click.confirm(confirm_message):
-                cfg.update_configuration("TEMPLATE", "directory", template_parent_path)
+                config.update_configuration("PATHS", "templates", template_parent_path)
             handled_template_configuration = True
         # if the configured template path and suppled template path don't match, ask to update
         if (
@@ -107,5 +144,5 @@ def check_template_configuration(template_file):
         ):
             confirm_message = f"Would you like to update the default template directory to {template_parent_path}?"
             if click.confirm(confirm_message):
-                cfg.update_configuration("TEMPLATE", "directory", template_parent_path)
+                config.update_configuration("PATHS", "templates", template_parent_path)
     return template_file

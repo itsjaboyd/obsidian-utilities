@@ -20,9 +20,16 @@ def create_directory_information(input_directory):
         input_directory (str, pathlib.Path): file-like object to analayze
             sub-files from and build the file table with.
 
+    Raises:
+        ValueError: if the supplied input directory is an empty string.
+
     Returns:
         str: the file table information string analyzed from input directory.
     """
+
+    if isinstance(input_directory, str):
+        if not input_directory:  # empty 'directory' supplied
+            raise ValueError(f"Supplied directory does not exist: '{input_directory}'")
 
     usable_directory = input_directory
     if not isinstance(input_directory, pathlib.Path):
@@ -132,7 +139,7 @@ def get_file_path_list(input_directory):
         usable_directory = pathlib.Path(input_directory)
 
     if not usable_directory.exists():
-        raise ValueError(f"Supplied directory does not exist: {input_directory}")
+        raise ValueError(f"Supplied directory does not exist: '{input_directory}'")
 
     # if the caller supplied a file then utilize its parent directory
     if usable_directory.is_file():
