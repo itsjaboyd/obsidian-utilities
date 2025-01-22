@@ -12,6 +12,12 @@ import pathlib
 
 
 def check_argument_iterable(supplied_object):
+    """Check to see if a supplied argument is iterable.
+
+    Args:
+        supplied_object (any): the supplied argument to check.
+    """
+
     try:  # recommended to just attempt iter() on object
         result = iter(supplied_object)
         return
@@ -20,6 +26,20 @@ def check_argument_iterable(supplied_object):
 
 
 def check_iterable_types(supplied_iterable, strict_type):
+    """Check to see if the supplied iterable contains objects that
+        are all of the same type.
+
+    Args:
+        supplied_iterable (iterable): the iterable to check internal
+            types against.
+        strict_type (type): the type that all internal objects to the
+            supplied iterable should match.
+
+    Raises:
+        ValueError: if any of the internal objects inside the supplied
+            iterable do not match the supplied type.
+    """
+
     check_argument_iterable(supplied_iterable)
     iterables_typed = []
     for iterated_object in supplied_iterable:
@@ -31,6 +51,16 @@ def check_iterable_types(supplied_iterable, strict_type):
 
 
 def check_argument_type(supplied_object, strict_type):
+    """Given an argument object, check to ensure it matches the supplied type.
+
+    Args:
+        supplied_object (any): the argument to check type against.
+        strict_type (type): the type to match against the argument.
+
+    Raises:
+        ValueError: if the argument does not have the supplied type.
+    """
+
     if not isinstance(supplied_object, strict_type):
         exception_message = f"Supplied argument {supplied_object} "
         exception_message += f"is not of {strict_type} type!"
@@ -38,6 +68,20 @@ def check_argument_type(supplied_object, strict_type):
 
 
 def attempt_pathlike_extraction(supplied_object):
+    """Given a path-like object, attempt to extract a pathlib.Path object
+        out of the argument and return it. If the argument cannot be used
+        as a Path() object then raise an exception.
+
+    Args:
+        supplied_object (any): the path-like object to test path-ness against.
+
+    Raises:
+        ValueError: if the argument cannot be turned into a Path() object.
+
+    Returns:
+        pathlib.Path: the extracted pathlib.Path object from the argument.
+    """
+
     if isinstance(supplied_object, pathlib.Path):
         return supplied_object
 
