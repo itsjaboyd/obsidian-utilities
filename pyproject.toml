@@ -16,7 +16,7 @@ config = "obsidian-utilities.toml"
 
 [tool.poetry]
 name = "obsidian-utilities"
-version = "0.0.3"
+version = "0.0.4"
 description = "Fundamental utilities that can be applied to multiple notes that live with the Obsidian application."
 authors = ["Jason Boyd <jasonboyd99@gmail.com>"]
 maintainers = ["Jason Boyd <jasonboyd99@gmail.com>"]
@@ -28,13 +28,13 @@ include = ["CHANGELOG.md", "LICENSE", "README.md"]
 packages = [
     { include = "configuration", from = "src" },
     { include = "templates", from = "src" },
-    { include = "obsidian_utilities", from = "src" },
+    { include = "utilities", from = "src" },
 ]
 
 
 [tool.poetry.scripts]
-copy-template = "obsidian_utilities.obsidian_utilities:copy_template"
-directory-list = "obsidian_utilities.obsidian_utilities:directory_list"
+copy-template = "utilities.utilities:copy_template"
+directory-list = "utilities.utilities:directory_list"
 
 
 [tool.poetry.dependencies]
