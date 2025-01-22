@@ -33,19 +33,34 @@ from configuration import configuration as cf
     required=False,
     help="Use a saved path in configuration to obtain directory information.",
 )
-def directory_information(directory, use_config):
+def directory_list(directory, use_config):
+    """Given the options of supplying a directory or using a configuration key
+        in PATHS, call the handle function to create and echo the analyzed directory.
+
+    Args:
+        directory (pathlib.Path): the path-like object to create the table list from.
+        use_config (str): the optional key to give configuration for a path in
+            the PATHS section (defaults to templates).
+    """
+
     if directory is not None:
-        attempt_directory_information(directory)
+        handle_directory_list(directory)
         return
 
     config = cf.Configuration()
     directory_path = config.get_configuration()["PATHS"][use_config]
-    attempt_directory_information(directory_path)
+    handle_directory_list(directory_path)
 
 
-def attempt_directory_information(directory):
+def handle_directory_list(directory):
+    """Handle calling the create_directory_table from the supplied directory.
+
+    Args:
+        directory (pathlib.Path): the directory to analyze and built the table from.
+    """
+
     try:  # attempt to print the neat table information for directory
-        result = tp.create_directory_information(directory)
+        result = tp.create_directory_table(directory)
         click.echo(result)
     except:  # some exception was raised in the table generation process
         click.echo(

@@ -34,7 +34,7 @@ packages = [
 
 [tool.poetry.scripts]
 copy-template = "obsidian_utilities.obsidian_utilities:copy_template"
-directory-information = "obsidian_utilities.obsidian_utilities:directory_information"
+directory-list = "obsidian_utilities.obsidian_utilities:directory_list"
 
 
 [tool.poetry.dependencies]

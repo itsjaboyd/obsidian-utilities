@@ -13,7 +13,7 @@ import datetime
 TABLE_SPACING = 5
 
 
-def create_directory_information(input_directory):
+def create_directory_table(input_directory):
     """Handler function for building the table string from directory information.
 
     Args:
