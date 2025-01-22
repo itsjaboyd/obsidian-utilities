@@ -9,6 +9,7 @@
 
 import pathlib
 import datetime
+from common import common as cm
 
 TABLE_SPACING = 5
 
@@ -74,6 +75,18 @@ def generate_directory_information(input_directory):
 
 
 def gather_dictionary_counts(object_list):
+    """Given an iterable of objects, create a dictionary that will
+        count each stringified conversion within the supplied iterable.
+
+    Args:
+        object_list (iterable): the iterable to build the count from.
+
+    Returns:
+        dict: the dictionary of counts of stringified elements in
+            the supplied iterable.
+    """
+
+    cm.check_argument_iterable(object_list)
     object_counts = {}
     for object_instance in object_list:
         stringed_object = str(object_instance)
@@ -85,6 +98,19 @@ def gather_dictionary_counts(object_list):
 
 
 def create_index_count_dictionary(object_list):
+    """Given an iterable, create a dictionary of indexes with zero
+        assigned to each as a base count.
+
+    Args:
+        object_list (iterable): the iterable with a length to build
+            the indexed dictionary from.
+
+    Returns:
+        dict: the indexed dictionary filled with number of entries equal
+            to the size of the supplied iterable all assigned with zeroes.
+    """
+
+    cm.check_argument_iterable(object_list)
     matched_data = {}
     for index in range(len(object_list)):
         matched_data[index] = 0
@@ -92,6 +118,18 @@ def create_index_count_dictionary(object_list):
 
 
 def create_indexed_dictionary_list(object_list):
+    """Given an iterable, create a list of dictionary objects that contain
+        the original object and its index within the list.
+
+    Args:
+        object_list (iterable): the iterable to build the list with.
+
+    Returns:
+        list: a list of dictionary objects that contain the original object
+            and its index in the original iterable.
+    """
+
+    cm.check_argument_iterable(object_list)
     object_index_list = []
     for index in range(len(object_list)):
         object_index_list.append({"object": object_list[index], "index": index})
@@ -99,12 +137,34 @@ def create_indexed_dictionary_list(object_list):
 
 
 def remove_indeces_from_list(object_list, indeces_list):
-    if len(indeces_list) == 0:  # caller doesn't wish to remove any indeces
+    """Remove the index entries supplied in the index list from the
+        supplied object list.
+
+    Args:
+        object_list (list): the list to remove entries from.
+        indeces_list (list, int): the list or single integer index to
+            remove from in the supplied object list.
+
+    Raises:
+        ValueError: if the caller supplied indeces that cannot exist
+            in the supplied object list.
+
+    Returns:
+        list: the new list with the specified indeces removed.
+    """
+
+    cm.check_argument_type(object_list, list)
+    if isinstance(indeces_list, int):
+        indeces_list = [indeces_list]
+
+    # caller doesn't wish to remove any indeces so return base list
+    if len(indeces_list) == 0:
         return object_list
 
-    invalid_range = max(indeces_list) > len(object_list) - 1 or min(indeces_list) < 0
-    if invalid_range:
-        raise ValueError(f"Cannot remove indeces not in supplied list.")
+    within_maximum = max(indeces_list) < len(object_list)
+    within_minimum = min(indeces_list) > 0
+    if within_maximum and within_minimum:
+        raise ValueError(f"Cannot remove indeces non-existent in supplied list.")
 
     reduced_list = []
     for index in range(len(object_list)):
@@ -114,9 +174,24 @@ def remove_indeces_from_list(object_list, indeces_list):
 
 
 def create_matched_level_data(path_list):
+    """Given a list of pathlib.Path objects, create a dictionary that
+        determines how many levels up one must go before the path
+        name becomes unique.
+
+    Args:
+        path_list (iterable): the pathlib.Path object iterable to
+            build the level dictionary from.
+
+    Returns:
+        dict: the level dictionary dictating how many levels up
+            paths become unique from eachother.
+    """
+
+    cm.check_argument_iterable(path_list)
+    cm.check_iterable_types(path_list, pathlib.Path)
+
     matched_data = create_index_count_dictionary(path_list)
     matched_helper = create_indexed_dictionary_list(path_list)
-
     while len(matched_helper) > 0:
         removal_indeces = []
         current_names = [ihl["object"].name for ihl in matched_helper]
@@ -137,10 +212,20 @@ def create_matched_level_data(path_list):
 
 
 def create_filename_level(path_object, number_levels):
-    usable_path = path_object
-    if not isinstance(path_object, pathlib.Path):
-        usable_path = pathlib.Path(path_object)
+    """Given a path-like object, return its string name based on how
+        many levels to go up from the supplied number of levels.
 
+    Args:
+        path_object (path-like): the path-like object to create a
+            string name from.
+        number_levels (int): the number of levels to go up in the
+            path to build the name.
+
+    Returns:
+        str: the number levels up path name created from path-like object.
+    """
+
+    usable_path = cm.attempt_pathlike_extraction(path_object)
     name_order = []
     for level in range(number_levels + 1):
         name_order.append(usable_path.name)
@@ -151,6 +236,19 @@ def create_filename_level(path_object, number_levels):
 
 
 def create_filename_list(path_list):
+    """Given an iterable of path-like objects, return back a list of
+        filename strings that are unique from eachother in that they
+        have been leveled.
+
+    Args:
+        path_list (path-like iterable): the path-like iterable to build
+            the list of unique string filenames from.
+
+    Returns:
+        list: the list of unique string filenames.
+    """
+
+    cm.check_argument_iterable(path_list)
     matched_levels = create_matched_level_data(path_list)
     filename_list = []
     for index in range(len(path_list)):
@@ -178,9 +276,7 @@ def build_table_string(information):
         str: the table representation of header and data supplied in information.
     """
 
-    if not isinstance(information, tuple):
-        raise ValueError(f"Supplied information is not a tuple: {information}")
-
+    cm.check_argument_type(information, tuple)
     if len(information) != 3:
         raise ValueError(f"Supplied information has incorrect length: {information}")
 
@@ -222,10 +318,7 @@ def get_file_path_list(input_directory):
             under the input directory.
     """
 
-    usable_directory = input_directory
-    if not isinstance(input_directory, pathlib.Path):
-        usable_directory = pathlib.Path(input_directory)
-
+    usable_directory = cm.attempt_pathlike_extraction(input_directory)
     if not usable_directory.exists():
         raise ValueError(f"Supplied directory does not exist: '{input_directory}'")
 
@@ -256,9 +349,7 @@ def handle_single_stat_file(file_object, stat):
             caller uses in nice, human-readable form.
     """
 
-    usable_path = file_object
-    if not isinstance(file_object, pathlib.Path):
-        usable_path = pathlib.Path(file_object)
+    usable_path = cm.attempt_pathlike_extraction(file_object)
     if not usable_path.is_file():
         return ""
     try:  # attempt to grab the ISO-formatted string from a stat of file_object.
@@ -299,14 +390,11 @@ def handle_list_stat_file(file_list, stat):
             performed on each file path.
     """
 
-    if not isinstance(file_list, list):
-        raise ValueError(
-            f"Cannot extract '{stat}' dates from non-list object: {file_list}"
-        )
-    file_iso_list = []
+    cm.check_argument_iterable(file_list)
+    file_statted_list = []
     for file_object in file_list:
-        file_iso_list.append(handle_single_stat_file(file_object, stat))
-    return file_iso_list
+        file_statted_list.append(handle_single_stat_file(file_object, stat))
+    return file_statted_list
 
 
 def convert_seconds_iso(seconds):
