@@ -99,9 +99,16 @@ def create_indexed_dictionary_list(object_list):
 
 
 def remove_indeces_from_list(object_list, indeces_list):
+    if len(indeces_list) == 0:  # caller doesn't wish to remove any indeces
+        return object_list
+
+    invalid_range = max(indeces_list) > len(object_list) - 1 or min(indeces_list) < 0
+    if invalid_range:
+        raise ValueError(f"Cannot remove indeces not in supplied list.")
+
     reduced_list = []
     for index in range(len(object_list)):
-        if index in indeces_list:
+        if index not in indeces_list:
             reduced_list.append(object_list[index])
     return reduced_list
 
@@ -110,8 +117,7 @@ def create_matched_level_data(path_list):
     matched_data = create_index_count_dictionary(path_list)
     matched_helper = create_indexed_dictionary_list(path_list)
 
-    handling_matches = True
-    while handling_matches:
+    while len(matched_helper) > 0:
         removal_indeces = []
         current_names = [ihl["object"].name for ihl in matched_helper]
         current_counts = gather_dictionary_counts(current_names)
@@ -127,17 +133,32 @@ def create_matched_level_data(path_list):
             {"object": previous["object"].parent, "index": previous["index"]}
             for previous in matched_helper
         ]
-        handling_matches = False if not matched_helper else True
     return matched_data
 
 
 def create_filename_level(path_object, number_levels):
+    usable_path = path_object
     if not isinstance(path_object, pathlib.Path):
-        raise ValueError(f"Path object is not of pathlib.Path type: {path_object}")
+        usable_path = pathlib.Path(path_object)
+
+    name_order = []
+    for level in range(number_levels + 1):
+        name_order.append(usable_path.name)
+        usable_path = usable_path.parent
+    name_order.reverse()
+    name_string = "/".join(name_order)
+    return name_string
 
 
 def create_filename_list(path_list):
-    pass
+    matched_levels = create_matched_level_data(path_list)
+    filename_list = []
+    for index in range(len(path_list)):
+        current_filename = create_filename_level(
+            path_list[index], matched_levels[index]
+        )
+        filename_list.append(current_filename)
+    return filename_list
 
 
 def build_table_string(information):
