@@ -61,7 +61,7 @@ def generate_directory_information(input_directory):
 
     header_info = ["Filenames", "Creation Date", "Modified Date", "Size"]
     walked_filenames = get_file_path_list(input_directory)
-    named_filenames = [filename.name for filename in walked_filenames]
+    named_filenames = create_filename_list(walked_filenames)
     filename_stats = [named_filenames]
     for stat_item in ["ct", "mt", "sz"]:
         filename_stats.append(handle_list_stat_file(walked_filenames, stat_item))
@@ -71,6 +71,73 @@ def generate_directory_information(input_directory):
         length_list = [len(element) for element in stat_list]
         length_info.append(max(length_list) + TABLE_SPACING)
     return (zipped_info, header_info, length_info)
+
+
+def gather_dictionary_counts(object_list):
+    object_counts = {}
+    for object_instance in object_list:
+        stringed_object = str(object_instance)
+        if stringed_object not in object_counts:
+            object_counts[stringed_object] = 1
+            continue
+        object_counts[stringed_object] += 1
+    return object_counts
+
+
+def create_index_count_dictionary(object_list):
+    matched_data = {}
+    for index in range(len(object_list)):
+        matched_data[index] = 0
+    return matched_data
+
+
+def create_indexed_dictionary_list(object_list):
+    object_index_list = []
+    for index in range(len(object_list)):
+        object_index_list.append({"object": object_list[index], "index": index})
+    return object_index_list
+
+
+def remove_indeces_from_list(object_list, indeces_list):
+    reduced_list = []
+    for index in range(len(object_list)):
+        if index in indeces_list:
+            reduced_list.append(object_list[index])
+    return reduced_list
+
+
+def create_matched_level_data(path_list):
+    matched_data = create_index_count_dictionary(path_list)
+    matched_helper = create_indexed_dictionary_list(path_list)
+
+    handling_matches = True
+    while handling_matches:
+        removal_indeces = []
+        current_names = [ihl["object"].name for ihl in matched_helper]
+        current_counts = gather_dictionary_counts(current_names)
+        for index in range(len(matched_helper)):
+            # if there is an empty name (top level directory) or there is no other match found
+            if not current_names[index] or current_counts[current_names[index]] <= 1:
+                removal_indeces.append(index)
+                continue
+            matched_data[matched_helper[index]["index"]] += 1
+
+        matched_helper = remove_indeces_from_list(matched_helper, removal_indeces)
+        matched_helper = [
+            {"object": previous["object"].parent, "index": previous["index"]}
+            for previous in matched_helper
+        ]
+        handling_matches = False if not matched_helper else True
+    return matched_data
+
+
+def create_filename_level(path_object, number_levels):
+    if not isinstance(path_object, pathlib.Path):
+        raise ValueError(f"Path object is not of pathlib.Path type: {path_object}")
+
+
+def create_filename_list(path_list):
+    pass
 
 
 def build_table_string(information):
