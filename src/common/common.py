@@ -48,6 +48,7 @@ def check_iterable_types(supplied_iterable, strict_type):
         exception_message = f"Not everything in {type(supplied_iterable)} "
         exception_message += f"is of {strict_type} type!"
         raise ValueError(exception_message)
+    return True
 
 
 def check_argument_type(supplied_object, strict_type):
@@ -65,6 +66,7 @@ def check_argument_type(supplied_object, strict_type):
         exception_message = f"Supplied argument {supplied_object} "
         exception_message += f"is not of {strict_type} type!"
         raise ValueError(exception_message)
+    return True
 
 
 def attempt_pathlike_extraction(supplied_object):
