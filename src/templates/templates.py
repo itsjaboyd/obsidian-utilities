@@ -4,7 +4,7 @@
 
     Author: Jason Boyd
     Date: January 20, 2025
-    Modified: January 21, 2025
+    Modified: January 23, 2025
 """
 
 import pathlib
@@ -14,8 +14,10 @@ from common import common as cm
 TABLE_SPACING = 5
 
 
-def create_directory_table(input_directory):
-    """Handler function for building the table string from directory information.
+def create_directory_table(input_directory, stat_list=[]):
+    """Provided a directory, create a table that shows each filename that
+        exists in the directory along with any statistics about each file
+        found supplied in the stat_list argument.
 
     Args:
         input_directory (str, pathlib.Path): file-like object to analayze
@@ -32,23 +34,22 @@ def create_directory_table(input_directory):
         if not input_directory:  # empty 'directory' supplied
             raise ValueError(f"Supplied directory does not exist: '{input_directory}'")
 
-    usable_directory = input_directory
-    if not isinstance(input_directory, pathlib.Path):
-        usable_directory = pathlib.Path(input_directory)
-
-    directory_information = generate_directory_information(usable_directory)
+    usable_directory = cm.attempt_pathlike_extraction(input_directory)
+    directory_information = generate_directory_information(usable_directory, stat_list)
     information_table = build_table_string(directory_information)
     return information_table
 
 
-def generate_directory_information(input_directory):
+def generate_directory_information(input_directory, stat_list=[]):
     """Given a template directory, gather datetime and size data about
         its underlying files and package this information into a tuple
         returned back to the caller.
 
     Args:
         input_directory (str, pathlib.Path): the path-like object
-            to analyze its underlying files from
+            to analyze its underlying files from.
+        stat_list (iterable): the list of statistics to gather about
+            the underlying files from.
 
     Returns:
         tuple: the zipped information that includes three objects:
@@ -60,18 +61,154 @@ def generate_directory_information(input_directory):
                 in the zipped_info object for formatting purposes.
     """
 
-    header_info = ["Filenames", "Creation Date", "Modified Date", "Size"]
+    header_info = create_headers_from_codes(["fn", *stat_list])
     walked_filenames = get_file_path_list(input_directory)
-    named_filenames = create_filename_list(walked_filenames)
-    filename_stats = [named_filenames]
-    for stat_item in ["ct", "mt", "sz"]:
-        filename_stats.append(handle_list_stat_file(walked_filenames, stat_item))
+    filename_stats = create_filename_stats(walked_filenames, stat_list)
+    base_header_length = length_information_conversion(header_info)
+    header_length = [item + TABLE_SPACING for item in base_header_length]
+    body_length = calculate_maximum_length(filename_stats)
+    length_info = take_larger_comparison(header_length, body_length)
     zipped_info = zip(*filename_stats)
-    length_info = []
-    for stat_list in filename_stats:
-        length_list = [len(element) for element in stat_list]
-        length_info.append(max(length_list) + TABLE_SPACING)
-    return (zipped_info, header_info, length_info)
+    return (header_info, zipped_info, length_info)
+
+
+def take_larger_comparison(initial, compare):
+    """Provided two iterables of integers, return a list that
+        contains the larger item compared between both iterables
+        for each item.
+
+    Args:
+        initial (iterable(int)): the first compare iterable.
+        compare (iterable(int)): the second compare iterable.
+
+    Raises:
+        ValueError: if the lists have different lengths.
+
+    Returns:
+        list: the larger comparisons between both iterables.
+    """
+
+    cm.check_iterable_types(initial, int)
+    cm.check_iterable_types(compare, int)
+
+    if len(initial) != len(compare):
+        raise ValueError(f"Supplied iterables are different sizes!")
+
+    captured_values = []
+    for initial_value, compare_value in zip(initial, compare):
+        if initial_value >= compare_value:
+            captured_values.append(initial_value)
+            continue
+        captured_values.append(compare_value)
+    return captured_values
+
+
+def length_information_conversion(information_list):
+    """Given an iterable of items, return a list that represents the
+        length of each item in the iterable.
+
+    Args:
+        information_list (iterable(any)): the iterable to extract
+            the lengths of each element from.
+
+    Returns:
+        list: the list containing the lengths of each element in
+            the supplied iterable.
+    """
+
+    cm.check_argument_iterable(information_list)
+    length_information = []
+    for item in information_list:
+        try:
+            item_length = len(item)
+            length_information.append(item_length)
+        except:
+            length_information.append(-1)
+    return length_information
+
+
+def calculate_maximum_length(multi_information_list):
+    """Provided a multidimensional iterable, for each item calculate the
+        maximum length present in its iterable and return a list designating
+        the maximum length found in each sub-iterable.
+
+    Args:
+        multi_information_list (iterable(iterable)): the multidimensional
+            iterable oject to extract maximum lengths from.
+
+    Returns:
+        list: the list containing the maximum lengths found for each sub-
+            iterable. The length of this list should match the length of
+            the supplied multi_information_list.
+    """
+
+    cm.check_argument_iterable(multi_information_list)
+    length_information = []
+    for check_list in multi_information_list:
+        cm.check_argument_iterable(check_list)
+        length_list = length_information_conversion(check_list)
+        current_spacing = TABLE_SPACING
+        if length_list:
+            current_spacing = max(length_list) + TABLE_SPACING
+        length_information.append(current_spacing)
+    return length_information
+
+
+def create_filename_stats(path_list, stat_list):
+    """Provided an iterable of pathlib.Path objects and an iterable of
+        desired statistics, build a list of filenames, and each stat that
+        belongs to the Path() object that was supplied in the stat list.
+
+    Args:
+        path_list (iterabl(pathlib.Path)): the pathlist to build the multi-
+            dimensional filename and statistics list from.
+        stat_list (iterable): the iterable of statistic codes to include
+            about each filename found in path_list.
+
+    Returns:
+        list: the multidimensional list that includes the filenames, and
+            each statistic that was supplied in stat_list.
+    """
+
+    cm.check_iterable_types(path_list, pathlib.Path)
+    cm.check_argument_iterable(stat_list)
+    named_filenames = create_filename_list(path_list)
+    filename_stats = [named_filenames]
+    for stat in stat_list:
+        current_stat_list = handle_list_stat_file(path_list, stat)
+        filename_stats.append(current_stat_list)
+    return filename_stats
+
+
+def create_headers_from_codes(code_list):
+    """Provided at statistic coded iterable, create a list that includes
+        header titles that corresponds to each code in the iterable.
+
+    Args:
+        code_list (iterable): the list of codes to match and build the
+            resulting header name list from.
+
+    Returns:
+        list: the list of header names gathered from each code in the
+            supplied iterable of codes.
+    """
+
+    cm.check_argument_iterable(code_list)
+    header_list = []
+    for code in code_list:
+        match code:
+            case "fn":
+                header_name = "Filenames"
+            case "ct":
+                header_name = "Creation Date"
+            case "mt":
+                header_name = "Modified Date"
+            case "sz":
+                header_name = "Size"
+            case _:
+                header_name = "Unknown"
+        header_list.append(header_name)
+    return header_list
 
 
 def gather_dictionary_counts(object_list):
@@ -280,7 +417,7 @@ def build_table_string(information):
     if len(information) != 3:
         raise ValueError(f"Supplied information has incorrect length: {information}")
 
-    zipped_info, header_info, length_info = information
+    header_info, zipped_info, length_info = information
     # create the header of the table string that contains column names
     header_string, main_string = "", ""
     for item_index in range(len(header_info)):
@@ -288,7 +425,8 @@ def build_table_string(information):
             header_info[item_index],
             f"<{length_info[item_index]}",
         )
-    header_string += f"\n{"-" * sum(length_info)}\n"
+    # create a divider exactly the length of data in the body
+    header_string += f"\n{"-" * (sum(length_info) - TABLE_SPACING)}\n"
     # create the body of the table containing data in zipped_info
     for packaged_data in zipped_info:
         for data_index in range(len(packaged_data)):

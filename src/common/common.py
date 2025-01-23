@@ -20,7 +20,7 @@ def check_argument_iterable(supplied_object):
 
     try:  # recommended to just attempt iter() on object
         result = iter(supplied_object)
-        return
+        return True
     except:  # simply raise the exception that is met
         raise
 
