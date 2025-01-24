@@ -11,7 +11,20 @@ class TestTemplates:
         pass
 
     def test_convert_seconds_iso(self):
-        pass
+        good_seconds = [1733759516, 1537249319, 1737749516]
+        good_results = [
+            "2024-12-09 08:51:56",
+            "2018-09-17 23:41:59",
+            "2025-01-24 13:11:56",
+        ]
+        for second, result in zip(good_seconds, good_results):
+            assert result == tp.convert_seconds_iso(second)
+            assert isinstance(result, str)
+        bad_seconds = ["test", None, pathlib.Path()]
+        for sec in bad_seconds:
+            result = tp.convert_seconds_iso(sec)
+            assert result == ""
+            assert isinstance(result, str)
 
     def test_create_directory_table(self):
         pass
@@ -26,7 +39,20 @@ class TestTemplates:
         pass
 
     def test_create_headers_from_codes(self):
-        pass
+        full_code_list = ["fn", "ct", "mt", "sz"]
+        assert tp.create_headers_from_codes(full_code_list) == [
+            "Filenames",
+            "Creation Date",
+            "Modified Date",
+            "Size",
+        ]
+        none_code_list = ["bt", "fu", "zz"]
+        unknown = set(tp.create_headers_from_codes(none_code_list))
+        assert unknown == {"Unknown"}
+        bad_code_list = [1, pathlib.Path(), None]
+        bad_codes = set(tp.create_headers_from_codes(bad_code_list))
+        assert bad_codes == {"Unknown"}
+        assert tp.create_headers_from_codes([]) == []
 
     def test_create_index_count_dictionary(self):
         pass
