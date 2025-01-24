@@ -55,16 +55,52 @@ class TestTemplates:
         assert tp.create_headers_from_codes([]) == []
 
     def test_create_index_count_dictionary(self):
-        pass
+        iterable = range(1000)
+        result = tp.create_index_count_dictionary(iterable)
+        assert isinstance(result, dict)
+        assert len(result) == len(iterable)
+        assert all([isinstance(key, int) for key in result.keys()])
+        assert all([element == 0 for element in result.values()])
+        assert max(result.keys()) == len(iterable) - 1
+        assert tp.create_index_count_dictionary([]) == {}
 
     def test_create_indexed_dictionary_list(self):
-        pass
+        iterable = range(1000)
+        result = tp.create_indexed_dictionary_list(iterable)
+        assert isinstance(result, list)
+        assert len(result) == len(iterable)
+        for element, index in zip(result, iterable):
+            assert isinstance(element, dict)
+            assert set(element.keys()) == {"object", "index"}
+            assert element["object"] == index
+            assert element["index"] == index
+        small_case = [25, datetime.date.today(), pathlib.Path()]
+        result = tp.create_indexed_dictionary_list(small_case)
+        assert len(result) == len(small_case)
+        for element, case in zip(result, small_case):
+            assert isinstance(element, dict)
+            assert set(element.keys()) == {"object", "index"}
+            assert element["object"] == case
+        assert tp.create_indexed_dictionary_list([]) == []
 
     def test_create_matched_level_data(self):
         pass
 
     def test_gather_dictionary_counts(self):
-        pass
+        iterable = range(1000)
+        result = tp.gather_dictionary_counts(iterable)
+        assert isinstance(result, dict)
+        assert len(result) == len(iterable)
+        assert all([element == 1 for element in result.values()])
+        assert all([isinstance(element, str) for element in result.keys()])
+        small_case = ["bingo", 1, 2, 2, str(datetime.date.today())]
+        result = tp.gather_dictionary_counts(small_case)
+        assert len(result) == 4
+        assert set(result.keys()) == {"bingo", "1", "2", str(datetime.date.today())}
+        counts = [1, 1, 2, 1]
+        for element, count in zip(result, counts):
+            assert result[element] == count
+        assert tp.gather_dictionary_counts([]) == {}
 
     def test_generate_directory_information(self):
         pass
@@ -79,7 +115,24 @@ class TestTemplates:
         pass
 
     def test_length_information_conversion(self):
-        pass
+        iterable = range(1000)
+        result = tp.length_information_conversion(iterable)
+        assert isinstance(result, list)
+        assert len(result) == len(iterable)
+        assert all([element == -1 for element in result])
+
+        iterable = "thisismyreallylongstringforiterating"
+        result = tp.length_information_conversion(iterable)
+        assert isinstance(result, list)
+        assert len(result) == len(iterable)
+        assert all([element == 1 for element in result])
+
+        small_case = ["test", range(100), datetime, []]
+        result = tp.length_information_conversion(small_case)
+        assert isinstance(result, list)
+        assert len(result) == len(small_case)
+        assert result == [4, 100, -1, 0]
+        assert tp.length_information_conversion([]) == []
 
     def test_remove_indeces_from_list(self):
         pass
