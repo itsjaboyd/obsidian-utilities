@@ -1,5 +1,6 @@
 import pathlib
 import datetime
+import pytest
 from templates import templates as tp
 
 
@@ -135,7 +136,32 @@ class TestTemplates:
         assert tp.length_information_conversion([]) == []
 
     def test_remove_indeces_from_list(self):
-        pass
+        iterable, removal = range(1000), range(1000)
+        result = tp.remove_indeces_from_list(iterable, removal)
+        assert isinstance(result, list)
+        assert result == []
+
+        result = tp.remove_indeces_from_list(iterable, [])
+        assert result == iterable
+
+        small_case = ["abc", {}, 100, ["test"], ()]
+        removal = [1, 3, 8, 9, -1]
+        result = tp.remove_indeces_from_list(small_case, removal)
+        assert len(result) == 3
+        assert result == ["abc", 100, ()]
 
     def test_take_larger_comparison(self):
-        pass
+        initial, compare = range(1000), range(1000)
+        result = tp.take_larger_comparison(initial, compare)
+        assert isinstance(result, list)
+        assert list(initial) == result
+
+        initial = [1, 3, 6, 9, 21, 24, 39]
+        compare = [0, 4, 5, 11, 18, 23, 50]
+        expected = [1, 4, 6, 11, 21, 24, 50]
+        result = tp.take_larger_comparison(initial, compare)
+        assert result == expected
+
+        with pytest.raises(ValueError):
+            tp.take_larger_comparison([], [0])
+        assert tp.take_larger_comparison([], []) == []

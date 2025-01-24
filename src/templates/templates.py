@@ -487,33 +487,26 @@ def length_information_conversion(information_list):
 
 def remove_indeces_from_list(object_list, indeces_list):
     """Remove the index entries supplied in the index list from the
-        supplied object list.
+        supplied object list. If a supplied index does not exist in
+        the object list, then it simply will not add it to the result
+        list, bypassing any "bad" indeces that are supplied.
 
     Args:
         object_list (list): the list to remove entries from.
         indeces_list (list, int): the list or single integer index to
             remove from in the supplied object list.
 
-    Raises:
-        ValueError: if the caller supplied indeces that cannot exist
-            in the supplied object list.
-
     Returns:
         list: the new list with the specified indeces removed.
     """
 
-    cm.check_argument_type(object_list, list)
+    cm.check_argument_iterable(object_list)
     if isinstance(indeces_list, int):
         indeces_list = [indeces_list]
 
     # caller doesn't wish to remove any indeces so return base list
     if len(indeces_list) == 0:
         return object_list
-
-    within_maximum = max(indeces_list) < len(object_list)
-    within_minimum = min(indeces_list) > 0
-    if within_maximum and within_minimum:
-        raise ValueError(f"Cannot remove indeces non-existent in supplied list.")
 
     reduced_list = []
     for index in range(len(object_list)):
