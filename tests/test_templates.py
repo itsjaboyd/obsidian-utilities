@@ -9,7 +9,24 @@ class TestTemplates:
         pass
 
     def test_calculate_maximum_length(self):
-        pass
+        iterable = [range(1000) for el in range(1000)]
+        result = tp.calculate_maximum_length(iterable)
+        assert isinstance(result, list)
+        assert len(iterable) == len(result)
+        expected = {-1 + tp.TABLE_SPACING}
+        assert set(result) == expected
+
+        small_case = ["testing", "templates", "fun"]
+        result = tp.calculate_maximum_length(small_case)
+        assert isinstance(result, list)
+        assert len(small_case) == len(result)
+        expected = [1 + tp.TABLE_SPACING for el in range(len(small_case))]
+        assert result == expected
+
+        result = tp.calculate_maximum_length([[]])
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result == [tp.TABLE_SPACING]
 
     def test_convert_seconds_iso(self):
         good_seconds = [1733759516, 1537249319, 1737749516]
@@ -30,8 +47,21 @@ class TestTemplates:
     def test_create_directory_table(self):
         pass
 
-    def test_create_filename_level(self):
-        pass
+    def test_create_filename_level(self, tmp_path):
+        zero_case = tmp_path
+        result = tp.create_filename_level(tmp_path, 0)
+        assert result == tmp_path.name
+        result = tp.create_filename_level(tmp_path, -100)
+        assert result == ""
+
+        expected_levels = "level-one/level-two/level-three.txt"
+        small_case = tmp_path / "level-one" / "level-two" / "level-three.txt"
+        result = tp.create_filename_level(small_case, 2)
+        assert result == expected_levels
+
+        result = tp.create_filename_level(small_case, 100)
+        print(result)
+        assert f"/{result}" == f"{tmp_path}/{expected_levels}"
 
     def test_create_filename_list(self):
         pass

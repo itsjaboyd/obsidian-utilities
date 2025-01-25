@@ -117,10 +117,13 @@ def create_filename_level(path_object, number_levels):
     """
 
     usable_path = cm.attempt_pathlike_extraction(path_object)
+    cm.check_argument_type(number_levels, int)
     name_order = []
     for level in range(number_levels + 1):
         name_order.append(usable_path.name)
         usable_path = usable_path.parent
+        if not usable_path.name:
+            break
     name_order.reverse()
     name_string = "/".join(name_order)
     return name_string
