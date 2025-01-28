@@ -1,6 +1,7 @@
 import pathlib
 import datetime
 import pytest
+import random
 from templates import templates as tp
 
 
@@ -136,14 +137,58 @@ class TestTemplates:
     def test_generate_directory_information(self):
         pass
 
-    def test_get_file_path_list(self):
-        pass
+    def test_get_file_path_list(self, tmp_path):
+        three_tests = [
+            tmp_path / "test-one",
+            tmp_path / "test-two",
+            tmp_path / "test-three",
+        ]
+
+        for test_path in three_tests:
+            with pytest.raises(ValueError):
+                tp.get_file_path_list(test_path)
+
+            test_path.mkdir()
+            first_result = tp.get_file_path_list(test_path)
+            assert isinstance(first_result, list)
+            assert len(first_result) == 0
+
+            random_amount = random.randint(0, 4)
+            random_levels = random.randint(0, 4)
+
+            self.build_file_tree(test_path, random_amount, random_levels)
+            expected_length = self.calculate_file_tree_count(
+                random_amount, random_levels
+            )
+            second_result = tp.get_file_path_list(test_path)
+            assert isinstance(second_result, list)
+            assert len(second_result) == expected_length
 
     def test_handle_list_stat_file(self):
         pass
 
-    def test_handle_single_stat_file(self):
-        pass
+    def test_handle_single_stat_file(self, tmp_path):
+        test_files = [tmp_path / f"test_file_{index}" for index in range(100)]
+        for test_file in test_files:
+            test_file.touch()
+
+        possible_codes = ["mt", "ct", "at", "sz", "bb", 0, None]
+        for test_file in test_files:
+            expected_results = [
+                tp.convert_seconds_iso(test_file.stat().st_mtime),
+                tp.convert_seconds_iso(test_file.stat().st_birthtime),
+                tp.convert_seconds_iso(test_file.stat().st_atime),
+                "0.0 KB",
+                "",
+                "",
+                "",
+            ]
+            for code, expected in zip(possible_codes, expected_results):
+                assert tp.handle_single_stat_file(test_file, code) == expected
+        directory = tmp_path / "directory"
+        directory.mkdir()
+        assert tp.handle_single_stat_file(directory, "mt") == ""
+        assert tp.handle_single_stat_file(tmp_path / "dir", "mt") == ""
 
     def test_length_information_conversion(self):
         iterable = range(1000)
@@ -195,3 +240,33 @@ class TestTemplates:
         with pytest.raises(ValueError):
             tp.take_larger_comparison([], [0])
         assert tp.take_larger_comparison([], []) == []
+
+    def build_file_tree(self, supplied_path, total_each, levels):
+        """Build a file/directory structure where each level includes
+        total_each of files and directories. For each leve, then
+        recursively build the same number of files and directories
+        in each created directory.
+
+        Total Files: sum of (total_each ** levels for each level > 0)
+        Total Dirs: same as number of files.
+        Total: total files + total dirs
+        """
+
+        if levels == 0:
+            return
+
+        for index in range(total_each):
+            current_name = f"f-{index}-l-{levels}.txt"
+            new_file = supplied_path / current_name
+            new_file.touch()
+
+        for index in range(total_each):
+            current_name = f"d-{index}-l-{levels}"
+            new_directory = supplied_path / current_name
+            new_directory.mkdir()
+
+            self.build_file_tree(new_directory, total_each, levels - 1)
+
+    @staticmethod
+    def calculate_file_tree_count(total_each, levels):
+        return sum([total_each**level for level in range(levels, 0, -1)])
