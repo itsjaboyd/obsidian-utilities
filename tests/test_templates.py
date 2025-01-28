@@ -164,8 +164,35 @@ class TestTemplates:
             assert isinstance(second_result, list)
             assert len(second_result) == expected_length
 
-    def test_handle_list_stat_file(self):
-        pass
+    def test_handle_list_stat_file(self, tmp_path):
+        # build a file tree strucutre of 5 files, 5 dirs at 5 levels deep
+        self.build_file_tree(tmp_path, 3, 3)
+        filename_list = tp.get_file_path_list(tmp_path)
+        possible_codes = ["mt", "ct", "at", "sz", "bb", 0, None]
+        expected_results = [
+            [
+                tp.convert_seconds_iso(test_result.stat().st_mtime)
+                for test_result in filename_list
+            ],
+            [
+                tp.convert_seconds_iso(test_result.stat().st_birthtime)
+                for test_result in filename_list
+            ],
+            [
+                tp.convert_seconds_iso(test_result.stat().st_atime)
+                for test_result in filename_list
+            ],
+            ["0.0 KB" for temp in range(len(filename_list))],
+            ["" for temp in range(len(filename_list))],
+            ["" for temp in range(len(filename_list))],
+            ["" for temp in range(len(filename_list))],
+        ]
+        for code, expected in zip(possible_codes, expected_results):
+            results = tp.handle_list_stat_file(filename_list, code)
+            assert isinstance(results, list)
+            assert len(results) == len(expected)
+            for res, exp in zip(results, expected):
+                assert res == exp
 
     def test_handle_single_stat_file(self, tmp_path):
         test_files = [tmp_path / f"test_file_{index}" for index in range(100)]
