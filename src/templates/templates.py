@@ -263,14 +263,16 @@ def create_matched_level_data(path_list):
             paths become unique from eachother.
     """
 
-    cm.check_argument_iterable(path_list)
     cm.check_iterable_types(path_list, pathlib.Path)
-
     matched_data = create_index_count_dictionary(path_list)
     matched_helper = create_indexed_dictionary_list(path_list)
+    levels_counter = 0
     while len(matched_helper) > 0:
         removal_indeces = []
-        current_names = [ihl["object"].name for ihl in matched_helper]
+        current_names = [
+            create_filename_level(ihl["object"], levels_counter)
+            for ihl in matched_helper
+        ]
         current_counts = gather_dictionary_counts(current_names)
         for index in range(len(matched_helper)):
             # if there is an empty name (top level directory) or there is no other match found
@@ -280,10 +282,7 @@ def create_matched_level_data(path_list):
             matched_data[matched_helper[index]["index"]] += 1
 
         matched_helper = remove_indeces_from_list(matched_helper, removal_indeces)
-        matched_helper = [
-            {"object": previous["object"].parent, "index": previous["index"]}
-            for previous in matched_helper
-        ]
+        levels_counter += 1
     return matched_data
 
 

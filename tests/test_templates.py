@@ -115,8 +115,18 @@ class TestTemplates:
             assert element["object"] == case
         assert tp.create_indexed_dictionary_list([]) == []
 
-    def test_create_matched_level_data(self):
-        pass
+    def test_create_matched_level_data(self, tmp_path):
+        directories = [
+            tmp_path / "level-two",
+            tmp_path / "level-three",
+            tmp_path / "level-four",
+        ]
+        items = [2, 3, 4]
+        levels = [2, 3, 4]
+        maxes = [1, 2, 3]
+        stuff = zip(directories, items, levels, maxes)
+        for directory, item, level, expected in stuff:
+            self.handle_create_match_level_data(directory, item, level, expected)
 
     def test_gather_dictionary_counts(self):
         iterable = range(1000)
@@ -268,6 +278,17 @@ class TestTemplates:
             tp.take_larger_comparison([], [0])
         assert tp.take_larger_comparison([], []) == []
 
+    def handle_create_match_level_data(
+        self, directory, total_each, levels, max_expected
+    ):
+        if not directory.is_dir():
+            directory.mkdir()
+        self.build_file_tree(directory, total_each, levels)
+        path_list = tp.get_file_path_list(directory)
+        match_data = tp.create_matched_level_data(path_list)
+        assert isinstance(match_data, dict)
+        assert max(match_data.values()) <= max_expected
+
     def build_file_tree(self, supplied_path, total_each, levels):
         """Build a file/directory structure where each level includes
         total_each of files and directories. For each leve, then
@@ -283,12 +304,12 @@ class TestTemplates:
             return
 
         for index in range(total_each):
-            current_name = f"f-{index}-l-{levels}.txt"
+            current_name = f"F-{index}-L-{levels}.txt"
             new_file = supplied_path / current_name
             new_file.touch()
 
         for index in range(total_each):
-            current_name = f"d-{index}-l-{levels}"
+            current_name = f"D-{index}-L-{levels}"
             new_directory = supplied_path / current_name
             new_directory.mkdir()
 
