@@ -102,12 +102,10 @@ def calculate_multiple_copied_paths(
         case "ISO":
             todays_date_iso = datetime.date.today().isoformat()
             found_separator = analyze_results["formatting_separator"]
-            todays_filename = todays_date_iso.replace(
-                "-", found_separator if found_separator else ""
-            )
-            todays_file_full = todays_filename + template_path.suffix
+            usable_separator = found_separator if found_separator else ""
+            todays_filename = todays_date_iso.replace("-", usable_separator)
             for index in range(number_copies):
-                middle = f"{found_separator}copy{found_separator}{index}"
+                middle = f"-copy-{index}"
                 todays_full = todays_filename + middle + template_path.suffix
                 target_files.append(target_path.joinpath(todays_full))
             return target_files
@@ -248,8 +246,6 @@ def copy_template(
     expected_filenames = calculate_copied_paths(
         template_path, target_path, use_formatting, number_copies
     )
-    if not expected_filenames:
-        raise RuntimeError("Failed to calculate expected filenames.")
 
     results = []
     for filename in expected_filenames:
