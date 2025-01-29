@@ -8,12 +8,13 @@
 
     Author: Jason Boyd
     Date: January 3, 2025
-    Modified: January 20, 2025
+    Modified: January 29, 2025
 """
 
 import pathlib
 import datetime
 import shutil
+from common import common as cm
 
 
 def analyze_directory(directory):
@@ -63,6 +64,142 @@ def analyze_directory(directory):
     return return_object
 
 
+def calculate_multiple_copied_paths(
+    template_object,
+    target_directory,
+    number_copies,
+    use_formatting=True,
+):
+    """Calculate the expected copied filename path-like objects from the
+        given template file and the target directory.
+
+    Args:
+        template_object (str, pathlib.Path): the template file object that
+            will be used to calculate the copy objects from.
+        target_directory (str, pathlib.Path): the target directory that
+            will be analyzed to calculate the copy objects into.
+        number_copies (int): the number of copies to make of the template file.
+        use_formatting (bool, optional): optionally use analyzed formatting
+            of target directory. Defaults to True.
+
+    Returns:
+        list: the expected copy filenames list.
+    """
+
+    template_path = cm.attempt_pathlike_extraction(template_object)
+    target_path = cm.attempt_pathlike_extraction(target_directory)
+    analyze_results = analyze_directory(target_path)
+
+    target_files = []
+    # if caller doesn't want to use formatting or couldn't find formatting
+    if not use_formatting or not analyze_results["detected_formatting"]:
+        for index in range(number_copies):
+            target_name = template_path.stem + f"-copy-{index}" + template_path.suffix
+            target_file = target_path.joinpath(target_name)
+            target_files.append(target_file)
+
+    match analyze_results["formatting_type"]:
+        case "ISO":
+            todays_date_iso = datetime.date.today().isoformat()
+            found_separator = analyze_results["formatting_separator"]
+            todays_filename = todays_date_iso.replace(
+                "-", found_separator if found_separator else ""
+            )
+            todays_file_full = todays_filename + template_path.suffix
+            for index in range(number_copies):
+                middle = f"{found_separator}copy{found_separator}{index}"
+                todays_full = todays_filename + middle + template_path.suffix
+                target_files.append(target_path.joinpath(todays_full))
+            return target_files
+        case _:
+            pass
+    return target_files
+
+
+def calculate_single_copied_paths(
+    template_object, target_directory, use_formatting=True
+):
+    """Calculate the expected copied filename path-like object from the
+        given template file and the target directory.
+
+    Args:
+        template_object (str, pathlib.Path): the template file object that
+            will be used to calculate the copy objects from.
+        target_directory (str, pathlib.Path): the target directory that
+            will be analyzed to calculate the copy objects into.
+        use_formatting (bool, optional):. optionally use analyzed
+            formatting of target directory. Defaults to True.
+
+    Returns:
+        list: the expected copy filenames list (one element).
+    """
+
+    template_path = cm.attempt_pathlike_extraction(template_object)
+    target_path = cm.attempt_pathlike_extraction(target_directory)
+
+    default_name = template_path.stem + "-copy" + template_path.suffix
+    default_file = target_path.joinpath(default_name)
+    analyze_results = analyze_directory(target_path)
+
+    # if caller doesn't want to use formatting or couldn't find formatting
+    if not use_formatting or not analyze_results["detected_formatting"]:
+        return [default_file]
+
+    match analyze_results["formatting_type"]:
+        case "ISO":
+            todays_date_iso = datetime.date.today().isoformat()
+            found_separator = analyze_results["formatting_separator"]
+            todays_file_name = todays_date_iso.replace(
+                "-", found_separator if found_separator else ""
+            )
+            todays_file_full = todays_file_name + template_path.suffix
+            single_file = target_path.joinpath(todays_file_full)
+            return [single_file]
+        case _:
+            pass
+    return [default_file]
+
+
+def calculate_copied_paths(
+    template_object, target_directory, use_formatting=True, number_copies=1
+):
+    """Given a template file and target directory with optional formatting
+        and number copies arguments, create the expected path-like objects
+        that will be copied from template into the target directory, without
+        doing any actual copying.
+
+    Args:
+        template_object (str, pathlib.path): the template file that will be
+            used to calculate the expected copied filenames
+        target_directory (str, pathlib.path): the target directory that will
+            be analyzed and used to calculate the expected copied filenames
+        use_formatting (bool, optional): optional use formatting argument to
+            analyze the target directory and use its found formatting.
+            Defaults to True.
+        number_copies (int, optional): the number of copies to make of the
+            template file. Defaults to 1.
+
+    Returns:
+        list: the calculated copied filenames list of pathlib.Path objects.
+    """
+
+    template_path = process_template_location(template_object)
+    target_path = process_directory_location(target_directory)
+
+    target_files = []
+    if number_copies < 1:
+        return target_files
+    elif number_copies > 1:
+        target_files = calculate_multiple_copied_paths(
+            template_path, target_path, number_copies, use_formatting
+        )
+    elif number_copies == 1:
+        target_files = calculate_single_copied_paths(
+            template_path, target_path, use_formatting
+        )
+    return target_files
+
+
 def compute_spread(string_list):
     """Compute the spread (range of lengths of elements) in string_list.
 
@@ -83,7 +220,9 @@ def compute_spread(string_list):
 def copy_template(
     template_object, target_directory, use_formatting=True, number_copies=1
 ):
-    """The top-level copy function that should be used by the caller.
+    """The top-level copy function that should be used by the caller. The function
+        calculates the expected filenames that will exist after the actual
+        copying operation, and then runs the handler function to perform the copy.
 
     Args:
         template_object (str): the template file path that will be used to copy from
@@ -106,13 +245,16 @@ def copy_template(
     template_path = process_template_location(template_object)
     target_path = process_directory_location(target_directory)
 
-    if number_copies == 1:
-        return copy_template_single(
-            template_path, target_path, use_formatting=use_formatting
-        )
-    return copy_template_multiple(
-        template_path, target_path, number_copies=number_copies
+    expected_filenames = calculate_copied_paths(
+        template_path, target_path, use_formatting, number_copies
     )
+    if not expected_filenames:
+        raise RuntimeError("Failed to calculate expected filenames.")
+
+    results = []
+    for filename in expected_filenames:
+        results.append(copy_template_handler(template_path, filename))
+    return results
 
 
 def copy_template_handler(template_path, target_file):
@@ -134,70 +276,11 @@ def copy_template_handler(template_path, target_file):
         raise FileExistsError(f"Target file already exists: {target_file}")
     elif target_file.is_dir():
         raise IsADirectoryError(f"Target file is a directory: {target_file}")
-
     try:  # attempt to perform the actual copy of the template into target
         shutil.copy(template_path, target_file)
         return True
     except:
         return False
-
-
-def copy_template_multiple(template_path, target_path, number_copies=1):
-    """Copy template file to the target path number_copies times.
-
-    Args:
-        template_path (pathlib.Path): the template file path to copy from
-        target_path (pathlib.Path): the target directory path to copy into
-        number_copies (int): the number of copies to make of template_path
-            into target_path.
-
-    Returns:
-        list: wether the copies succeeded or not based on further function calls.
-    """
-
-    results = []
-    for index in range(0, number_copies):
-        target_name = template_path.stem + f"-copy-{index}" + template_path.suffix
-        target_file = target_path.joinpath(target_name)
-        results.append(copy_template_handler(template_path, target_file))
-    return results
-
-
-def copy_template_single(template_path, target_path, use_formatting=True):
-    """Copy a single template file to the target path, optionally using existing formatting.
-
-    Args:
-        template_path (pathlib.Path): the template file path to copy from
-        target_path (pathlib.Path): the target directory path to copy into
-        use_formatting (bool, optional): optionally use potentially existing formatting
-        in the target directory. If ISO formatting is found, the copied file will
-        utilize today's date as its file name. Defaults to True.
-
-    Returns:
-        bool: wether the copy succeeded or not based on further function calls.
-    """
-
-    analyze_results = analyze_directory(target_path)
-    # if caller doesn't want to use formatting or couldn't find formatting
-    if not use_formatting or not analyze_results["detected_formatting"]:
-        target_name = template_path.stem + "-copy" + template_path.suffix
-        target_file = target_path.joinpath(target_name)
-        return [copy_template_handler(template_path, target_file)]
-
-    single_file = None
-    match analyze_results["formatting_type"]:
-        case "ISO":
-            todays_date_iso = datetime.date.today().isoformat()
-            todays_file_name = template_path.stem + "-copy" + template_path.suffix
-            found_separator = analyze_results["formatting_separator"]
-            todays_file_name = todays_date_iso.replace(
-                "-", found_separator if found_separator else ""
-            )
-            todays_file_full = todays_file_name + template_path.suffix
-            single_file = target_path.joinpath(todays_file_full)
-        case _:
-            pass
-    return [copy_template_handler(template_path, single_file)]
 
 
 def find_common_position_characters(string_list):
@@ -313,7 +396,6 @@ def process_directory_location(target_directory):
     """
 
     path_instance = pathlib.Path(target_directory).resolve()
-
     if path_instance.name == target_directory:  # caller supplied a name of directory
         raise FileNotFoundError(
             f"Target directory should be directory path: {target_directory}"
@@ -350,13 +432,6 @@ def process_template_location(template_object):
 
     # grab the resolved path from the template_object location for processing
     path_instance = pathlib.Path(template_object).resolve()
-
-    if path_instance.name == template_object:  # caller just supplied a name of file
-        # TODO: check to see if program has template path saved
-        template_saved = False
-        if not template_saved:
-            raise FileNotFoundError(f"Template location not found: {template_object}")
-
     if not path_instance.exists():
         raise FileNotFoundError(f"Template object does not exist: {template_object}")
     if path_instance.is_dir():
@@ -365,6 +440,38 @@ def process_template_location(template_object):
         raise FileNotFoundError(
             f"Template object is not a valid file: {template_object}"
         )
-
     # determined that template_object is a good file for copying from
     return path_instance
+
+
+def verify_copies_target(copies):
+    """Given an iterable of path-like objects, return an object dictating
+        wether the copy filenames already existe or not with a message and
+        the alredy-existing path-like objects.
+
+    Args:
+        copies (iterable): the iterable of path-like objects to check
+            for existence against.
+
+    Returns:
+        dict: the return dictionary of information from the verification.
+    """
+
+    copy_paths = (  # gather a list of path-like copy objects
+        [cm.attempt_pathlike_extraction(cp) for cp in copies]
+        if cm.check_argument_iterable(copies)
+        else [cm.attempt_pathlike_extraction(copies)]
+    )
+
+    invalid_files = []
+    for copy_path in copy_paths:
+        if copy_path.is_file():
+            invalid_files.append(copy_path)
+
+    if invalid_files:
+        return {
+            "valid": False,
+            "message": "Copy files exist in target directory.",
+            "files": invalid_files,
+        }
+    return {"valid": True, "message": "", "files": invalid_files}
