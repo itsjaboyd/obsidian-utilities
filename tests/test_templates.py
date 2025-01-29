@@ -65,10 +65,35 @@ class TestTemplates:
         assert f"/{result}" == f"{tmp_path}/{expected_levels}"
 
     def test_create_filename_list(self):
-        pass
+        path_list = [
+            pathlib.Path("something/other/file-one.txt"),
+            pathlib.Path("something/other/file-two.txt"),
+            pathlib.Path("something/this/file-one.txt"),
+            pathlib.Path("another/other/file-one.txt"),
+            pathlib.Path("something/other/file-three.txt"),
+        ]
+        expected = [
+            "something/other/file-one.txt",
+            "file-two.txt",
+            "this/file-one.txt",
+            "another/other/file-one.txt",
+            "file-three.txt",
+        ]
+        assert tp.create_filename_list(path_list) == expected
+        assert tp.create_filename_list([]) == []
 
-    def test_create_filename_stats(self):
-        pass
+    def test_create_filename_stats(self, tmp_path):
+        stat_list = ["mt", "ct", "sz", "at", "fm", "yz"]
+        self.build_file_tree(tmp_path, 3, 3)
+        file_paths = tp.get_file_path_list(tmp_path)
+        result_stats = tp.create_filename_stats(file_paths, stat_list)
+        # the result includes the leveled filenames list with stats
+        assert isinstance(result_stats, list)
+        assert len(stat_list) + 1 == len(result_stats)
+
+        result_stats = tp.create_filename_stats([], [])
+        assert isinstance(result_stats, list)
+        assert len(result_stats) == 1
 
     def test_create_headers_from_codes(self):
         full_code_list = ["fn", "ct", "mt", "sz"]
@@ -144,8 +169,23 @@ class TestTemplates:
             assert result[element] == count
         assert tp.gather_dictionary_counts([]) == {}
 
-    def test_generate_directory_information(self):
-        pass
+    def test_generate_directory_information(self, tmp_path):
+        results = tp.generate_directory_information(tmp_path)
+        assert isinstance(results, tuple)
+        assert len(results) == 3
+        assert results[0] == ["Filenames"]
+        assert isinstance(results[1], zip)
+        assert len(results[2]) == 1
+
+        self.build_file_tree(tmp_path, 5, 2)
+        total_files = self.calculate_file_tree_count(5, 2)
+        stat_list = ["ct", "mt", "at", "sz"]
+        results = tp.generate_directory_information(tmp_path, stat_list)
+        assert isinstance(results, tuple)
+        assert len(results) == 3
+        assert results[0] == tp.create_headers_from_codes(["fn", *stat_list])
+        assert isinstance(results[1], zip)
+        assert len(results[2]) == 5
 
     def test_get_file_path_list(self, tmp_path):
         three_tests = [
