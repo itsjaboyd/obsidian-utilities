@@ -7,7 +7,14 @@ from templates import templates as tp
 
 class TestTemplates:
     def test_build_table_string(self):
-        pass
+        assert tp.build_table_string(([], zip(), [])) == "\n\n"
+        result = tp.build_table_string((["test"], zip([0]), [0]))
+        assert result == "test\n\n0\n"
+        headers = ["h-1", "h-2", "h-3"]
+        body = zip(["f-1", "f-2", "f-3"], [1, 2, 3], ["a", "b", "c"])
+        lengths = [0, 0, 0]
+        result = tp.build_table_string((headers, body, lengths))
+        assert result == "h-1h-2h-3\n\nf-11a\nf-22b\nf-33c\n"
 
     def test_calculate_maximum_length(self):
         iterable = [range(1000) for el in range(1000)]
@@ -45,8 +52,12 @@ class TestTemplates:
             assert result == ""
             assert isinstance(result, str)
 
-    def test_create_directory_table(self):
-        pass
+    def test_create_directory_table(self, tmp_path):
+        with pytest.raises(ValueError):
+            tp.create_directory_table("")
+
+        expected_empty = "Filenames     \n---------\n"
+        assert tp.create_directory_table(tmp_path) == expected_empty
 
     def test_create_filename_level(self, tmp_path):
         zero_case = tmp_path
