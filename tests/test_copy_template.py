@@ -74,7 +74,6 @@ class TestCopyTemplate:
 
         for tgd_file in tgd_files:
             tgd_file.unlink(missing_ok=True)
-
         tgd_files = [
             tgd / "20250101.txt",
             tgd / "20020202.txt",
@@ -91,8 +90,39 @@ class TestCopyTemplate:
             expected_name = f"{todays_date_iso}-copy-{index}{tpf.suffix}"
             assert copy_expected[index].name == expected_name
 
-    def test_calculate_single_copied_paths(self):
-        pass
+    def test_calculate_single_copied_paths(self, tmp_path):
+        tpf, tgd = self.helper_create_template_structure(tmp_path)
+        tgd_files = [
+            tgd / "test.txt",
+            tgd / "number-one.txt",
+            tgd / "2025-01-01.txt",
+        ]
+        for tgd_file in tgd_files:
+            tgd_file.touch()
+        copy_name = tpf.stem + "-copy" + tpf.suffix
+        result = ct.calculate_single_copied_paths(tpf, tgd)
+        assert isinstance(result, list) and len(result) == 1
+        assert result[-1].name == copy_name
+        result = ct.calculate_single_copied_paths(tpf, tgd, False)
+        assert result[-1].name == copy_name
+
+        for tgd_file in tgd_files:
+            tgd_file.unlink(missing_ok=True)
+        tgd_files = [
+            tgd / "20250101.txt",
+            tgd / "20020202.txt",
+            tgd / "16651212.txt",
+        ]
+        for tgd_file in tgd_files:
+            tgd_file.touch()
+        todays_date_iso = datetime.date.today().isoformat()
+        todays_date_iso = todays_date_iso.replace("-", "")
+        expected_name = todays_date_iso + tpf.suffix
+        result = ct.calculate_single_copied_paths(tpf, tgd)
+        assert isinstance(result, list) and len(result) == 1
+        assert result[-1].name == expected_name
+        result = ct.calculate_single_copied_paths(tpf, tgd, False)
+        assert result[-1].name == copy_name
 
     def test_calculate_copied_paths(self):
         pass
