@@ -467,7 +467,7 @@ def verify_copies_target(copies):
     if invalid_files:
         return {
             "valid": False,
-            "message": "Copy files exist in target directory.",
+            "message": "Expected copy files exist in target directory.",
             "files": invalid_files,
         }
     return {"valid": True, "message": "", "files": invalid_files}

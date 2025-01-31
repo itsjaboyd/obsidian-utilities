@@ -89,33 +89,49 @@ def handle_directory_list(directory):
     default=1,
     help="Number of template copies to make.",
 )
-def copy_template(filename, destination, uf, n):
-    """Command to copy a template filename to a destination n times with option use
-        formatting uf. The function checks template configuration to get a usable
+def copy_template(filename, destination, use_formatting, number_copies):
+    """Command to copy a template filename to a destination number_copies times with option use
+        formatting use_formatting. The function checks template configuration to get a usable
         target directory from destination and attempts the copy operation.
 
     Args:
         filename (pathlib.Path): the template filename to copy from.
         destination (pathlib.Path): the target directory to put copies in.
-        uf (bool): analyze destination for formatting to use in the copy.
-        n (int): the number of copies to make of the template file.
+        use_formatting (bool): analyze destination for formatting to use in the copy.
+        number_copies (int): the number of copies to make of the template file.
     """
 
     results, usable_filename = [False], check_template_configuration(filename)
+    expected_copies = ct.calculate_copied_paths(
+        usable_filename, destination, use_formatting, number_copies
+    )
+    copies_verification = ct.verify_copies_target(expected_copies)
+    if not copies_verification["valid"]:
+        click.echo(f"Warning: {copies_verification['message']}")
+        for existing_file in copies_verification["files"]:
+            click.echo(f"\t- {existing_file}")
+        confirm_message = "Would you like to continue copying the available files?"
+        if not click.confirm(confirm_message):
+            click.echo("Aborting copy operation.")
+            return
+
     try:  # attempt to copy the template file to the destination using templates module
         click.echo(
-            f"Copying template file '{filename.name}' {n} time(s) to {destination.name}/."
+            f"Copying template file '{filename.name}' {number_copies} time(s) to {destination.name}/."
         )
         results = ct.copy_template(
-            usable_filename, destination, use_formatting=uf, number_copies=n
+            usable_filename,
+            destination,
+            use_formatting=use_formatting,
+            number_copies=number_copies,
         )
     except FileExistsError as fee:
         click.echo(f"Cannot copy template file to destination: {fee}")
     except FileNotFoundError as fnfe:
         click.echo(f"Cannot find template file location: {fnfe}")
     results_message = (
-        f"Template file '{filename.name}' copied {"" if all(results) else "un"}"
-        f"successfully {n} time(s) to {usable_filename}."
+        f"Template file '{filename.name}' copied {'' if all(results) else 'un'}"
+        f"successfully {number_copies} time(s) to {usable_filename}."
     )
     click.echo(results_message)
 
