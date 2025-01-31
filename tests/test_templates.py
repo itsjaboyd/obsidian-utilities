@@ -230,15 +230,23 @@ class TestTemplates:
         self.build_file_tree(tmp_path, 3, 3)
         filename_list = tp.get_file_path_list(tmp_path)
         possible_codes = ["mt", "ct", "at", "sz", "bb", 0, None]
+        birthtime_expected = [
+            tp.convert_seconds_iso(test_result.stat().st_ctime)
+            for test_result in filename_list
+        ]
+        try: # attempt to get the birthtime on windows cases
+            birthtime_expected = [
+                tp.convert_seconds_iso(test_result.stat().st_birthtime)
+                for test_result in filename_list
+            ]
+        except:
+            pass
         expected_results = [
             [
                 tp.convert_seconds_iso(test_result.stat().st_mtime)
                 for test_result in filename_list
             ],
-            [
-                tp.convert_seconds_iso(test_result.stat().st_birthtime)
-                for test_result in filename_list
-            ],
+            birthtime_expected,
             [
                 tp.convert_seconds_iso(test_result.stat().st_atime)
                 for test_result in filename_list
@@ -261,10 +269,15 @@ class TestTemplates:
             test_file.touch()
 
         possible_codes = ["mt", "ct", "at", "sz", "bb", 0, None]
+        birthtime_expected = tp.convert_seconds_iso(test_file.stat().st_ctime)
+        try:
+            birthtime_expected = tp.convert_seconds_iso(test_file.stat().st_birthtime)
+        except:
+            pass
         for test_file in test_files:
             expected_results = [
                 tp.convert_seconds_iso(test_file.stat().st_mtime),
-                tp.convert_seconds_iso(test_file.stat().st_birthtime),
+                birthtime_expected,
                 tp.convert_seconds_iso(test_file.stat().st_atime),
                 "0.0 KB",
                 "",

@@ -44,7 +44,7 @@ def build_table_string(information):
             f"<{length_info[item_index]}",
         )
     # create a divider exactly the length of data in the body
-    header_string += f"\n{"-" * (sum(length_info) - TABLE_SPACING)}\n"
+    header_string += f"\n{'-' * (sum(length_info) - TABLE_SPACING)}\n"
     # create the body of the table containing data in zipped_info
     for packaged_data in zipped_info:
         for data_index in range(len(packaged_data)):
@@ -449,7 +449,11 @@ def handle_single_stat_file(file_object, stat):
                 modified_seconds = usable_path.stat().st_mtime
                 return convert_seconds_iso(modified_seconds)
             case "ct":  # return the ISO-formatted creation time
-                creation_seconds = usable_path.stat().st_birthtime
+                creation_seconds = usable_path.stat().st_ctime
+                try: # sometimes birthtime isn't available on windows
+                    creation_seconds = usable_path.stat().st_birthtime
+                except: # just use the already gathered ctime attribute
+                    pass
                 return convert_seconds_iso(creation_seconds)
             case "at":  # return the ISO-formatted access time
                 access_seconds = usable_path.stat().st_atime
