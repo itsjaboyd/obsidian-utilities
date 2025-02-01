@@ -45,6 +45,14 @@ class TestConfiguration:
             config_string += f"User Config File: {test_file}"
             assert str(config) == config_string
 
+    def test_get(self, tmp_path):
+        test_path, test_file = self.create_path_file(tmp_path, "tcpa", "cc.toml")
+        config = cf.Configuration(supplied_path=test_path)
+        assert config.get("DNE", "DNE") is None
+        assert config.get("", "") is None
+        assert config.get("PATHS", "nothing") == None
+        assert config.get("PATHS", "templates") == ""
+
     def test_get_configuration(self, tmp_path):
         test_path, test_file = self.create_path_file(tmp_path, "tcpa", "cc.toml")
         config = cf.Configuration(supplied_path=test_path)
@@ -74,7 +82,7 @@ class TestConfiguration:
         config.write_configuration(test_toml)
         assert test_toml == config.get_configuration()
 
-    def test_update_configuration(self, tmp_path):
+    def test_update(self, tmp_path):
         test_path, test_file = self.create_path_file(tmp_path, "tcpa")
         config = cf.Configuration(supplied_path=test_path)
 
@@ -82,11 +90,11 @@ class TestConfiguration:
         runtime_table = tomlkit.table()
         runtime_table.add("purpose", "notes")
         matching_toml.add("RUNTIME", runtime_table)
-        config.update_configuration("RUNTIME", "purpose", "notes")
+        config.update("RUNTIME", "purpose", "notes")
         assert matching_toml == config.get_configuration()
 
         matching_toml["PATHS"]["templates"] = "testing"
-        config.update_configuration("PATHS", "templates", "testing")
+        config.update("PATHS", "templates", "testing")
         assert matching_toml == config.get_configuration()
 
     def test_create_deafult_toml(self, tmp_path):

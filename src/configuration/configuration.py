@@ -11,6 +11,7 @@
 import pathlib
 import tomlkit
 import platformdirs
+from common import common as cm
 
 
 # load the projects toml configuration for application items
@@ -76,6 +77,24 @@ class Configuration:
         self_string += f"User Config File: {self.user_configuration_file}"
         return self_string
 
+    def get(self, section, key):
+        """Get the value present und er a section and key.
+
+        Args:
+            section (str): the section the key lives under.
+            key (str): the key the value lives under.
+
+        Returns:
+            str, Nonetype: the found value if exists, else None.
+        """
+
+        current = self.get_configuration()
+        try:  # attempt to get a value from current configuration
+            gathered_value = current[section][key]
+            return gathered_value
+        except:  # non-existent section or key, so return nonetype
+            return None
+
     def get_configuration(self):
         """Read the configuration file saved in the Configuration object and
             return its contents as a tomlkit TOMLDocument object.
@@ -88,6 +107,23 @@ class Configuration:
         with open(self.user_configuration_file, "r") as cf:
             current_configuration = tomlkit.load(cf)
         return current_configuration
+
+    def update(self, section, key, value):
+        """Update the current configuration file with value that is found
+            under a secion and key, creating a new section and key if they
+            don't already exist.
+
+        Args:
+            section (str): the section header that the key and value belong to.
+            key (str): the key that the value will be assigned to.
+            value (str): the value that will be assigned to the key under section.
+        """
+
+        current_configuration = self.get_configuration()
+        if section not in current_configuration:
+            current_configuration.add(section, {})
+        current_configuration[section][key] = value
+        self.write_configuration(current_configuration)
 
     def write_configuration(self, new_toml):
         """Write the new_toml TOMLDocument object to the saved configuration
@@ -108,23 +144,6 @@ class Configuration:
 
         with open(self.user_configuration_file, "w") as cf:
             tomlkit.dump(new_toml, cf)
-
-    def update_configuration(self, section, key, value):
-        """Update the current configuration file with value that is found
-            under a secion and key, creating a new section and key if they
-            don't already exist.
-
-        Args:
-            section (str): the section header that the key and value belong to.
-            key (str): the key that the value will be assigned to.
-            value (str): the value that will be assigned to the key under section.
-        """
-
-        current_configuration = self.get_configuration()
-        if section not in current_configuration:
-            current_configuration.add(section, {})
-        current_configuration[section][key] = value
-        self.write_configuration(current_configuration)
 
     @staticmethod
     def handle_platformdirs_path():
@@ -160,10 +179,7 @@ class Configuration:
             tuple: the config file and path names in tuple form (file, path).
         """
 
-        configuration_path = supplied_path
-        if not isinstance(supplied_path, pathlib.Path):
-            configuration_path = pathlib.Path(supplied_path)
-
+        configuration_path = cm.attempt_pathlike_extraction(supplied_path)
         if not configuration_path.exists():
             raise ValueError(
                 f"Supplied configuration path does not exist: {configuration_path}"
