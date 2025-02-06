@@ -206,6 +206,7 @@ class Configuration:
         configuration_comment = tomlkit.comment("Application Configuration")
         configuration_contents.add(configuration_comment)
         paths = tomlkit.table()
+        paths.add("vault", "")
         paths.add("templates", "")
         paths.add("dailys", "")
         configuration_contents.add("PATHS", paths)
