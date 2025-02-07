@@ -4,9 +4,10 @@
 
     Author: Jason Boyd
     Date: February 6, 2025
-    Modified: February 6, 2025
+    Modified: February 7, 2025
 """
 
+import pathlib
 from configuration import configuration as cf
 from common import common as cm
 
@@ -38,15 +39,7 @@ class Analyzer:
 
     @staticmethod
     def common_position_characters(strings):
-        """Find all common characters that share the same position in string_list.
-
-        Args:
-            string_list (iterable): the iterable to find the common characters from.
-
-        Returns:
-            list: the unique list of sorted characters that all share the same position.
-        """
-
+        cm.check_iterable_types(strings, str)
         commonality = set()
         for comparer, *elements in zip(*strings):
             if all(comparer == matcher for matcher in elements):
@@ -54,13 +47,27 @@ class Analyzer:
         return sorted(list(commonality))
 
     @staticmethod
-    def gather_directories(directory):
-        pass
+    def common_characters(strings):
+        cm.check_iterable_types(strings, str)
+        string_sets = [set(element) for element in strings]
+        return set.intersection(*string_sets)
 
     @staticmethod
-    def gather_directory_objects(directory):
-        pass
+    def gather_directories_files(directory, deep=False):
+        directory_path = cm.attempt_pathlike_extraction(directory)
+        directory_objects = Analyzer.gather_directory_objects(directory_path, deep)
+        directories, files = [], []
+        for element in directory_objects:
+            if element.is_dir():
+                directories.append(element)
+            if element.is_file():
+                files.append(element)
+        return directories, files
 
     @staticmethod
-    def gather_files(directory):
-        pass
+    def gather_directory_objects(directory, deep=False):
+        directory_path = cm.attempt_pathlike_extraction(directory)
+        if not directory_path.is_dir():
+            raise ValueError(f"Supplied directory is not a directory: {directory}.")
+        # gather all items recursively if deep otherwise iterate the directory
+        return directory_path.rglob("*") if deep else directory_path.iterdir()
