@@ -45,10 +45,10 @@ def analyze_directory(directory):
         return return_object
 
     # file names have different lengths, don't process for patterns
-    if compute_spread(stem_names) > 0:
+    if cm.compute_spread(stem_names) > 0:
         return return_object
 
-    common_characters = find_common_position_characters(stem_names)
+    common_characters = cm.common_position_characters(stem_names)
 
     # could be an ISO formatted date naming convention in directory
     iso_formatted_files, split_common_char = iso_formatted_list(
@@ -198,23 +198,6 @@ def calculate_copied_paths(
     return target_files
 
 
-def compute_spread(string_list):
-    """Compute the spread (range of lengths of elements) in string_list.
-
-    Args:
-        string_list (iterable): the iterable to compare lengths against.
-
-    Returns:
-        int: the spread of the supplied string_list.
-    """
-
-    if len(string_list) == 0:
-        return 0
-
-    element_lengths = [len(s) for s in string_list]
-    return max(element_lengths) - min(element_lengths)
-
-
 def copy_template(
     template_object, target_directory, use_formatting=True, number_copies=1
 ):
@@ -277,23 +260,6 @@ def copy_template_handler(template_path, target_file):
         return True
     except:
         return False
-
-
-def find_common_position_characters(string_list):
-    """Find all common characters that share the same position in string_list.
-
-    Args:
-        string_list (iterable): the iterable to find the common characters from.
-
-    Returns:
-        list: the unique list of sorted characters that all share the same position.
-    """
-
-    commonality = set()
-    for comparer, *elements in zip(*string_list):
-        if all(comparer == matcher for matcher in elements):
-            commonality.add(comparer)
-    return sorted(list(commonality))
 
 
 def iso_formatted_list(string_list, common_characters):

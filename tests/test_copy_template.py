@@ -127,15 +127,6 @@ class TestCopyTemplate:
     def test_calculate_copied_paths(self):
         pass
 
-    def test_compute_spread(self):
-        zero_spread = ["one", "two", "six"]
-        one_spread = ["one", "two", "four"]
-        ten_spread = ["one", "twenty-sevens"]
-
-        assert ct.compute_spread(zero_spread) == 0
-        assert ct.compute_spread(one_spread) == 1
-        assert ct.compute_spread(ten_spread) == 10
-
     def test_copy_template(self, tmp_path):
         tfo, tdo = self.helper_create_template_structure(tmp_path)
         with pytest.raises(ValueError):
@@ -161,62 +152,6 @@ class TestCopyTemplate:
         assert ct.copy_template_handler(template_file, good_target_one) == True
         good_target_two = tmp_path / "good_target_two.txt"
         assert ct.copy_template_handler(template_dir, good_target_two) == False
-
-    # def test_copy_template_multiple(self, tmp_path):
-    #     tfo, tdo = self.helper_create_template_structure(tmp_path / "one")
-    #     results_one = ct.copy_template_multiple(tfo, tdo, number_copies=5)
-    #     assert isinstance(results_one, list)
-    #     assert len(results_one) == 5
-    #     assert all(results_one)
-
-    #     tft, tdt = self.helper_create_template_structure(tmp_path / "two")
-    #     results_two = ct.copy_template_multiple(tft, tdt, number_copies=20)
-    #     assert isinstance(results_two, list)
-    #     assert len(results_two) == 20
-    #     assert all(results_two)
-
-    #     tfth, tdth = self.helper_create_template_structure(tmp_path / "three")
-    #     results_three = ct.copy_template_multiple(tfth, tdth, number_copies=0)
-    #     assert isinstance(results_three, list)
-    #     assert len(results_three) == 0
-
-    # def test_copy_template_single(self, tmp_path):
-    #     temp_paths = [
-    #         tmp_path / "temp_path_one",
-    #         tmp_path / "temp_path_two",
-    #         tmp_path / "temp_path_three",
-    #     ]
-    #     for temp_path in temp_paths:
-    #         temp_path.mkdir()
-
-    #     iso_files_one = ["2025-01-01.txt", "2025-01-02.txt"]
-    #     expected_file_one = datetime.date.today().isoformat() + ".txt"
-    #     self.helper_copy_template_single(
-    #         iso_files_one, expected_file_one, temp_paths[0]
-    #     )
-
-    #     iso_files_two = ["2025-01-01.txt", "2025_01_02.txt"]
-    #     expected_file_two = "template_file-copy.txt"
-    #     self.helper_copy_template_single(
-    #         iso_files_two, expected_file_two, temp_paths[1]
-    #     )
-
-    #     iso_files_three = ["20250101.txt", "20250102.txt"]
-    #     expected_file_three = (
-    #         datetime.date.today().isoformat().replace("-", "") + ".txt"
-    #     )
-    #     self.helper_copy_template_single(
-    #         iso_files_three, expected_file_three, temp_paths[2]
-    #     )
-
-    def test_find_common_position_characters(self):
-        common_one = ["app", "apple", "apricot"]
-        common_two = ["jason", "lakom", "casom"]
-        common_none = ["jimmy", "alpha", "corona"]
-
-        assert ct.find_common_position_characters(common_one) == ["a", "p"]
-        assert ct.find_common_position_characters(common_two) == ["a", "o"]
-        assert ct.find_common_position_characters(common_none) == []
 
     def test_iso_formatted_list(self):
         good_iso_one, good_chars_one = ["2025-01-01", "2025-01-02"], []
